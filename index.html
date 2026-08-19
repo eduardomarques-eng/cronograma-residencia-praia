@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cronograma ArqVértice | Gestão Multidisciplinar</title>
+  <meta name="description" content="Sistema de Gerenciamento e Controle de Cronograma ArqVértice para Projetos Multidisciplinares de Arquitetura, Estrutura e Complementares.">
+  
+  <!-- Fontes Google: Montserrat e JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600;1,700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- html2pdf.js para Exportação em PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Estilos da Aplicação -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- MASTER CABEÇALHO EXECUTIVO DA APLICAÇÃO -->
+    <header class="app-master-header">
+      <!-- Linha Superior: Logo Ampliada, Identidade Institucional e Resumo de Qualidade -->
+      <div class="master-top-bar">
+        <div class="master-brand-wrap">
+          <div class="logo-badge-arqvertice">
+            <img src="logo.png" alt="ArqVértice Logo" class="brand-logo-img">
+          </div>
+          <div class="master-brand-text">
+            <div class="project-tag">
+              <span class="pulse-dot"></span>
+              ARQVÉRTICE • ENGENHARIA, ARQUITETURA & GESTÃO DE OBRAS
+            </div>
+            <h1 class="project-title">Cronograma ArqVértice</h1>
+            <p class="project-subtitle">Sistema Integrado de Controle de Prazos, Entregas e Execução</p>
+            <div class="brand-quality-summary">
+              <i data-lucide="award"></i>
+              <span>Projetos e obras desenvolvidos com <strong>máximo rigor técnico, organização e padrão de excelência</strong> do canteiro à entrega final.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-theme-toggle" class="btn btn-icon" title="Alternar Tema Claro/Escuro">
+            <i data-lucide="sun" class="sun-icon"></i>
+            <i data-lucide="moon" class="moon-icon"></i>
+          </button>
+
+          <button id="btn-new-project" class="btn btn-secondary btn-new-proj-btn" title="Limpar dados cadastrais para iniciar um novo projeto do zero">
+            <i data-lucide="file-plus-2"></i>
+            <span>Novo Projeto</span>
+          </button>
+
+          <button id="btn-sample-project" class="btn btn-secondary" title="Preencher com os dados do exemplo (Residência de Praia - Pedro)">
+            <i data-lucide="sparkles"></i>
+            <span>Carregar Exemplo</span>
+          </button>
+
+          <button id="btn-open-report" class="btn btn-report" title="Gerar e Exportar Relatório Executivo em PDF para o Cliente">
+            <i data-lucide="file-text"></i>
+            <span>Relatório PDF</span>
+          </button>
+
+          <button id="btn-reset-seed" class="btn btn-secondary" title="Restaurar tarefas padrão">
+            <i data-lucide="rotate-ccw"></i>
+            <span>Restaurar Tarefas</span>
+          </button>
+
+          <button id="btn-export-json" class="btn btn-secondary" title="Exportar dados em JSON">
+            <i data-lucide="download"></i>
+            <span>Exportar</span>
+          </button>
+
+          <button id="btn-new-task" class="btn btn-primary">
+            <i data-lucide="plus"></i>
+            <span>Nova Tarefa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ficha Técnica Consolidada: Dados da Obra, Cliente, Local, Cadastrais e Equipe Técnica -->
+      <div class="master-info-card">
+        <!-- Coluna 1: Dados de Entrada da Obra e Cliente (Campos Interativos / Editáveis) -->
+        <div class="master-obra-details">
+          <div class="obra-header-quick-bar">
+            <div class="obra-badge-row">
+              <span class="badge-obra-type"><i data-lucide="building-2"></i> DADOS DE ENTRADA DO PROJETO</span>
+              <span class="badge-obra-status"><i data-lucide="activity"></i> EM ANDAMENTO</span>
+            </div>
+            <div class="quick-status-msg" id="header-save-indicator">
+              <i data-lucide="check-circle-2"></i> Auto-salvo
+            </div>
+          </div>
+
+          <!-- Nome da Obra -->
+          <div class="obra-title-field-group">
+            <label for="header-input-nome" class="field-entry-label">
+              <i data-lucide="home"></i> Nome da Obra / Empreendimento:
+            </label>
+            <input type="text" id="header-input-nome" class="header-main-title-input" placeholder="Digite o Nome da Obra (ex: Residência de Praia)..." value="Residência de Praia">
+          </div>
+          
+          <!-- Grid de Campos de Entrada Cadastrais / Urbanísticos -->
+          <div class="obra-data-grid">
+            <!-- 1. Cliente / Contratante -->
+            <div class="obra-data-item">
+              <label for="header-input-cliente" class="data-label">
+                <i data-lucide="user"></i> Cliente / Contratante:
+              </label>
+              <input type="text" id="header-input-cliente" class="header-inline-input" placeholder="Nome do Cliente (ex: Pedro)..." value="Pedro">
+            </div>
+
+            <!-- 2. Localização da Obra -->
+            <div class="obra-data-item">
+              <label for="header-input-local" class="data-label">
+                <i data-lucide="map-pin"></i> Localização da Obra:
+              </label>
+              <input type="text" id="header-input-local" class="header-inline-input" placeholder="Ex: Loteamento Praia Bela, Litoral Sul..." value="Loteamento Praia Bela, Litoral Sul">
+            </div>
+
+            <!-- 3. Identificação Cadastral -->
+            <div class="obra-data-item">
+              <label for="header-input-lotequadra" class="data-label">
+                <i data-lucide="layers"></i> Identificação Cadastral:
+              </label>
+              <input type="text" id="header-input-lotequadra" class="header-inline-input" placeholder="Ex: Lote 14, Quadra B..." value="Lote 14, Quadra B">
+            </div>
+
+            <!-- 4. Zoneamento -->
+            <div class="obra-data-item">
+              <label for="header-input-zona" class="data-label">
+                <i data-lucide="map"></i> Zoneamento:
+              </label>
+              <input type="text" id="header-input-zona" class="header-inline-input" placeholder="Ex: Zona Residencial (ZR-1)..." value="Zona Residencial Litorânea (ZR-1)">
+            </div>
+
+            <!-- 5. Tipologia da Edificação -->
+            <div class="obra-data-item">
+              <label for="header-input-tipologia" class="data-label">
+                <i data-lucide="building"></i> Tipologia da Edificação:
+              </label>
+              <input type="text" id="header-input-tipologia" class="header-inline-input" placeholder="Ex: Residencial Unifamiliar (2 Pavimentos)..." value="Residencial Unifamiliar (2 Pavimentos)">
+            </div>
+
+            <!-- 6. Área Construída -->
+            <div class="obra-data-item">
+              <label for="header-input-areaconst" class="data-label">
+                <i data-lucide="maximize-2"></i> Área Construída:
+              </label>
+              <input type="text" id="header-input-areaconst" class="header-inline-input" placeholder="Ex: 385,00 m²..." value="385,00 m²">
+            </div>
+
+            <!-- 7. Área do Lote / Terreno -->
+            <div class="obra-data-item">
+              <label for="header-input-areaterreno" class="data-label">
+                <i data-lucide="box"></i> Área do Lote / Terreno:
+              </label>
+              <input type="text" id="header-input-areaterreno" class="header-inline-input" placeholder="Ex: 450,00 m² (15m x 30m)..." value="450,00 m² (15m x 30m)">
+            </div>
+
+            <!-- 8. Início da Obra & Previsão -->
+            <div class="obra-data-item">
+              <label for="header-input-inicio" class="data-label">
+                <i data-lucide="calendar-play"></i> Início & Previsão de Conclusão:
+              </label>
+              <div class="dates-inline-wrapper">
+                <input type="text" id="header-input-inicio" class="header-inline-input input-date-part" placeholder="Início (DD-MM-AAAA)" value="12-06-2026">
+                <span class="date-sep">a</span>
+                <input type="text" id="header-input-fim" class="header-inline-input input-date-part" placeholder="Previsão (DD-MM-AAAA)" value="30-11-2026">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna 2: Equipe Técnica e Responsabilidades -->
+        <div class="master-team-block">
+          <div class="team-block-title">
+            <i data-lucide="users"></i>
+            <span>RESPONSÁVEIS TÉCNICOS & ESCOPOS DE EXECUÇÃO</span>
+          </div>
+          
+          <div class="master-executores-grid">
+            <!-- 1. Erick Santiago -->
+            <div class="master-executor-item disc-obr-border">
+              <div class="master-exec-header">
+                <div class="exec-avatar avatar-erick">ES</div>
+                <div class="exec-names">
+                  <span class="exec-title">Erick Santiago</span>
+                  <span class="exec-subtitle">Engenheiro de Obra</span>
+                </div>
+              </div>
+              <p class="exec-desc"><strong>Atribuição:</strong> Responsável pela Execução de Obra, Canteiro e Acompanhamento de Campo.</p>
+            </div>
+
+            <!-- 2. Luan Almeida -->
+            <div class="master-executor-item disc-est-border">
+              <div class="master-exec-header">
+                <div class="exec-avatar avatar-luan">LA</div>
+                <div class="exec-names">
+                  <span class="exec-title">Luan Almeida</span>
+                  <span class="exec-subtitle">Engenheiro Calculista</span>
+                </div>
+              </div>
+              <p class="exec-desc"><strong>Atribuição:</strong> Responsável pelo Projeto Estrutural (Fundações, Formas e Armaduras).</p>
+            </div>
+
+            <!-- 3. Eduardo Marques -->
+            <div class="master-executor-item disc-arq-border">
+              <div class="master-exec-header">
+                <div class="exec-avatar avatar-eduardo">EM</div>
+                <div class="exec-names">
+                  <span class="exec-title">Eduardo Marques</span>
+                  <span class="exec-subtitle">Arquiteto Projetista</span>
+                </div>
+              </div>
+              <p class="exec-desc"><strong>Atribuição:</strong> Responsável por Arquitetura, 3D/Render e Complementares (Elétrico/Hidro).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD DE KPIS E PROGRESSO -->
+    <section class="kpi-section">
+      <!-- Card Geral -->
+      <div class="kpi-card kpi-main">
+        <div class="kpi-header">
+          <span class="kpi-label">Progresso Geral</span>
+          <i data-lucide="trending-up" class="kpi-icon text-accent"></i>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-total-percent" class="kpi-number">0%</span>
+            <span class="kpi-badge" id="kpi-tasks-count">0 / 0 concluídas</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="kpi-main-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Arquitetura -->
+      <div class="kpi-card discipline-card disc-arquitetura">
+        <div class="kpi-header">
+          <div class="disc-title-wrapper">
+            <span class="disc-indicator bg-arquitetura"></span>
+            <span class="kpi-label">Arquitetura</span>
+          </div>
+          <span class="responsavel-tag" title="Arquiteto Projetista">Eduardo Marques</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-arq-percent" class="kpi-number">0%</span>
+            <span class="kpi-sub" id="kpi-arq-count">0 tarefas</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="kpi-arq-progress-bar" class="progress-bar-fill bg-arquitetura" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Estrutura -->
+      <div class="kpi-card discipline-card disc-estrutura">
+        <div class="kpi-header">
+          <div class="disc-title-wrapper">
+            <span class="disc-indicator bg-estrutura"></span>
+            <span class="kpi-label">Estrutura</span>
+          </div>
+          <span class="responsavel-tag" title="Engenheiro Calculista">Luan Almeida</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-est-percent" class="kpi-number">0%</span>
+            <span class="kpi-sub" id="kpi-est-count">0 tarefas</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="kpi-est-progress-bar" class="progress-bar-fill bg-estrutura" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Complementares -->
+      <div class="kpi-card discipline-card disc-complementares">
+        <div class="kpi-header">
+          <div class="disc-title-wrapper">
+            <span class="disc-indicator bg-complementares"></span>
+            <span class="kpi-label">Complementares</span>
+          </div>
+          <span class="responsavel-tag" title="Arquiteto Projetista">Eduardo Marques</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-comp-percent" class="kpi-number">0%</span>
+            <span class="kpi-sub" id="kpi-comp-count">0 tarefas</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="kpi-comp-progress-bar" class="progress-bar-fill bg-complementares" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Obras -->
+      <div class="kpi-card discipline-card disc-obras">
+        <div class="kpi-header">
+          <div class="disc-title-wrapper">
+            <span class="disc-indicator bg-obras"></span>
+            <span class="kpi-label">Execução de Obras</span>
+          </div>
+          <span class="responsavel-tag" title="Engenheiro de Obra">Erick Santiago</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-obr-percent" class="kpi-number">0%</span>
+            <span class="kpi-sub" id="kpi-obr-count">0 tarefas</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="kpi-obr-progress-bar" class="progress-bar-fill bg-obras" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Prazos Críticos -->
+      <div class="kpi-card kpi-alert">
+        <div class="kpi-header">
+          <span class="kpi-label">Prazos Críticos (≤ 7 dias)</span>
+          <i data-lucide="alert-triangle" class="kpi-icon text-danger"></i>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-critical-count" class="kpi-number text-danger">0</span>
+            <span class="kpi-badge badge-danger" id="kpi-critical-sub">Requer Atenção</span>
+          </div>
+          <p class="kpi-hint">Tarefas não finalizadas com entrega próxima ou vencidas</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BARRA DE CONTROLE, FILTROS E VENCIMENTO -->
+    <section class="control-panel">
+      <!-- Filtro de Vencimento Específico do PDF -->
+      <div class="deadline-filter-box">
+        <div class="deadline-header">
+          <i data-lucide="calendar-clock" class="text-accent"></i>
+          <span class="filter-title">SELECIONE CRITÉRIOS PARA TAREFAS COM DATA DE CONCLUSÃO DENTRO DE:</span>
+        </div>
+        <div class="deadline-controls">
+          <div class="deadline-input-wrapper">
+            <input type="number" id="filter-days-input" min="1" max="365" value="30" class="input-days">
+            <span class="days-unit">DIAS</span>
+          </div>
+          <input type="range" id="filter-days-slider" min="1" max="180" value="30" class="slider-days">
+          <div class="quick-presets">
+            <button class="btn-chip" data-days="7">7d</button>
+            <button class="btn-chip" data-days="15">15d</button>
+            <button class="btn-chip active" data-days="30">30d (Padrão)</button>
+            <button class="btn-chip" data-days="60">60d</button>
+            <button class="btn-chip" data-days="90">90d</button>
+            <button class="btn-chip" data-days="all">Todos</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros Dinâmicos e Controles de Visualização -->
+      <div class="filters-row">
+        <div class="filter-group search-group">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="text" id="filter-search" placeholder="Buscar por etapa do projeto..." class="input-search">
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-disciplina" class="filter-label">Disciplina:</label>
+          <div class="select-wrapper">
+            <select id="filter-disciplina" class="select-input">
+              <option value="all">Todas as Disciplinas</option>
+              <option value="Arquitetura">Arquitetura</option>
+              <option value="Estrutura">Estrutura</option>
+              <option value="Complementares">Complementares</option>
+              <option value="Obras">Execução de Obras</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-arrow"></i>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-projetista" class="filter-label">Responsável:</label>
+          <div class="select-wrapper">
+            <select id="filter-projetista" class="select-input">
+              <option value="all">Todos os Responsáveis</option>
+              <option value="Eduardo Marques">Eduardo Marques (Arquiteto)</option>
+              <option value="Luan Almeida">Luan Almeida (Eng. Calculista)</option>
+              <option value="Erick Santiago">Erick Santiago (Eng. de Obra)</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-arrow"></i>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-status" class="filter-label">Status:</label>
+          <div class="select-wrapper">
+            <select id="filter-status" class="select-input">
+              <option value="all">Todos os Status</option>
+              <option value="Não Iniciado">Não Iniciado (0%)</option>
+              <option value="Em Andamento">Em Andamento (1-99%)</option>
+              <option value="Finalizado">Finalizado (100%)</option>
+            </select>
+            <i data-lucide="chevron-down" class="select-arrow"></i>
+          </div>
+        </div>
+
+        <!-- Alternador de Visões -->
+        <div class="view-switcher">
+          <button id="tab-kanban" class="tab-btn active" data-view="kanban">
+            <i data-lucide="columns-3"></i>
+            <span>Kanban</span>
+          </button>
+          <button id="tab-datagrid" class="tab-btn" data-view="datagrid">
+            <i data-lucide="table-2"></i>
+            <span>Tabela de Controle</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Legenda Original do PDF -->
+      <div class="legend-bar">
+        <span class="legend-title">LEGENDA DE CONCLUSÃO:</span>
+        <div class="legend-items">
+          <div class="legend-item">
+            <span class="legend-color-box bg-pdf-blue"></span>
+            <span>&gt;= 0% (Inicial / Pendente)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-box bg-pdf-green"></span>
+            <span>&lt; 40% a &lt; 99% (Em Desenvolvimento)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-box bg-pdf-gold"></span>
+            <span>&gt;= 99% (Finalizado)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-color-box bg-pdf-alert"></span>
+            <span class="text-danger font-semibold">Alerta Crítico: ≤ 7 dias para entrega</span>
+          </div>
+        </div>
+        <div class="results-count" id="results-count-label">
+          Exibindo 13 de 13 tarefas
+        </div>
+      </div>
+    </section>
+
+    <!-- ÁREA DE VISUALIZAÇÕES -->
+    <main class="views-wrapper">
+      
+      <!-- 1. VISÃO KANBAN -->
+      <section id="view-kanban" class="view-content active">
+        <div class="kanban-grid">
+          
+          <!-- Coluna: Não Iniciado -->
+          <div class="kanban-column" data-status="Não Iniciado">
+            <div class="kanban-col-header header-not-started">
+              <div class="col-title-group">
+                <span class="status-dot dot-not-started"></span>
+                <h3>Não Iniciado</h3>
+                <span class="col-count" id="count-nao-iniciado">0</span>
+              </div>
+              <span class="col-tag">0%</span>
+            </div>
+            <div class="kanban-cards-list" id="list-nao-iniciado">
+              <!-- Cards injetados via JS -->
+            </div>
+          </div>
+
+          <!-- Coluna: Em Andamento -->
+          <div class="kanban-column" data-status="Em Andamento">
+            <div class="kanban-col-header header-in-progress">
+              <div class="col-title-group">
+                <span class="status-dot dot-in-progress"></span>
+                <h3>Em Andamento</h3>
+                <span class="col-count" id="count-em-andamento">0</span>
+              </div>
+              <span class="col-tag">1% a 99%</span>
+            </div>
+            <div class="kanban-cards-list" id="list-em-andamento">
+              <!-- Cards injetados via JS -->
+            </div>
+          </div>
+
+          <!-- Coluna: Finalizado -->
+          <div class="kanban-column" data-status="Finalizado">
+            <div class="kanban-col-header header-completed">
+              <div class="col-title-group">
+                <span class="status-dot dot-completed"></span>
+                <h3>Finalizado</h3>
+                <span class="col-count" id="count-finalizado">0</span>
+              </div>
+              <span class="col-tag">100%</span>
+            </div>
+            <div class="kanban-cards-list" id="list-finalizado">
+              <!-- Cards injetados via JS -->
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 2. VISÃO TABELA DE CONTROLE (DATAGRID) -->
+      <section id="view-datagrid" class="view-content">
+        <div class="datagrid-container">
+          <div class="datagrid-scroll">
+            <table class="datagrid-table" id="tasks-table">
+              <thead>
+                <tr>
+                  <th class="th-sortable" data-sort="descricao_etapa">
+                    Descrição / Etapa <i data-lucide="arrow-up-down" class="sort-icon"></i>
+                  </th>
+                  <th class="th-sortable" data-sort="disciplina_projeto">
+                    Projeto / Disciplina <i data-lucide="arrow-up-down" class="sort-icon"></i>
+                  </th>
+                  <th class="th-sortable" data-sort="projetista">
+                    Projetista <i data-lucide="arrow-up-down" class="sort-icon"></i>
+                  </th>
+                  <th class="th-sortable" data-sort="data_conclusao">
+                    A concluir em <i data-lucide="arrow-up-down" class="sort-icon"></i>
+                  </th>
+                  <th style="min-width: 200px;">Progresso Visual</th>
+                  <th class="th-sortable" data-sort="porcentagem" style="width: 140px;">
+                    Percentagem <i data-lucide="arrow-up-down" class="sort-icon"></i>
+                  </th>
+                  <th class="th-sortable" data-sort="status">
+                    Status <i data-lucide="arrow-up-down" class="sort-icon"></i>
+                  </th>
+                  <th style="width: 110px; text-align: center;">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="datagrid-tbody">
+                <!-- Linhas injetadas via JS com edição in-line -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MODAL DE EDIÇÃO DE DADOS DA OBRA / FICHA CADASTRAL -->
+    <div id="project-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrapper">
+            <div class="modal-icon-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent);">
+              <i data-lucide="settings-2"></i>
+            </div>
+            <div>
+              <h2>Ficha Cadastral e Dados de Entrada da Obra</h2>
+              <p class="modal-subtitle">Atualize as informações cadastrais, urbanísticas e prazos do empreendimento</p>
+            </div>
+          </div>
+          <button id="btn-close-project-modal" class="btn-close" aria-label="Fechar Modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <form id="form-project-info" class="modal-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-proj-nome" class="form-label required">Nome do Empreendimento / Obra</label>
+              <input type="text" id="form-proj-nome" class="form-input" required placeholder="Ex: Residência de Praia">
+            </div>
+            <div class="form-group">
+              <label for="form-proj-cliente" class="form-label required">Cliente / Contratante</label>
+              <input type="text" id="form-proj-cliente" class="form-input" required placeholder="Ex: Pedro">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-proj-local" class="form-label required">Localização da Obra</label>
+              <input type="text" id="form-proj-local" class="form-input" required placeholder="Ex: Loteamento Praia Bela, Litoral Sul">
+            </div>
+            <div class="form-group">
+              <label for="form-proj-lotequadra" class="form-label required">Lote e Quadra</label>
+              <input type="text" id="form-proj-lotequadra" class="form-input" required placeholder="Ex: Lote 14, Quadra B">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-proj-zona" class="form-label required">Zoneamento / Zona</label>
+              <input type="text" id="form-proj-zona" class="form-input" required placeholder="Ex: Zona Residencial Litorânea (ZR-1)">
+            </div>
+            <div class="form-group">
+              <label for="form-proj-tipologia" class="form-label required">Tipologia da Edificação</label>
+              <input type="text" id="form-proj-tipologia" class="form-input" required placeholder="Ex: Residencial Unifamiliar (2 Pavimentos)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-proj-areaconst" class="form-label required">Área Construída (m²)</label>
+              <input type="text" id="form-proj-areaconst" class="form-input" required placeholder="Ex: 385,00 m²">
+            </div>
+            <div class="form-group">
+              <label for="form-proj-areaterreno" class="form-label required">Área do Lote / Terreno (m²)</label>
+              <input type="text" id="form-proj-areaterreno" class="form-input" required placeholder="Ex: 450,00 m² (15m x 30m)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="form-proj-inicio" class="form-label required">Data de Início (DD-MM-YYYY)</label>
+              <input type="text" id="form-proj-inicio" class="form-input" required placeholder="Ex: 12-06-2026">
+            </div>
+            <div class="form-group">
+              <label for="form-proj-fim" class="form-label required">Previsão de Conclusão (DD-MM-YYYY)</label>
+              <input type="text" id="form-proj-fim" class="form-input" required placeholder="Ex: 30-11-2026">
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" id="btn-cancel-project-modal" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="save"></i>
+              <span>Salvar Dados da Obra</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL DE CRIAÇÃO / EDIÇÃO DE TAREFA -->
+    <div id="task-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrapper">
+            <div class="modal-icon-badge">
+              <i data-lucide="layers"></i>
+            </div>
+            <div>
+              <h2 id="modal-title">Nova Etapa do Projeto</h2>
+              <p class="modal-subtitle">Preencha as informações da entrega técnica multidisciplinar</p>
+            </div>
+          </div>
+          <button id="btn-close-modal" class="btn-close" aria-label="Fechar Modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <form id="task-form" class="modal-form">
+          <input type="hidden" id="form-task-id">
+
+          <!-- Descrição da Etapa -->
+          <div class="form-group">
+            <label for="form-descricao" class="form-label required">Descrição da Etapa</label>
+            <input type="text" id="form-descricao" class="form-input" placeholder="Ex: Projeto Executivo de Arquitetura" required autocomplete="off">
+            <span class="form-help">Nome claro e objetivo da entrega técnica.</span>
+          </div>
+
+          <div class="form-row">
+            <!-- Disciplina do Projeto -->
+            <div class="form-group">
+              <label for="form-disciplina" class="form-label required">Disciplina do Projeto</label>
+              <select id="form-disciplina" class="form-select" required>
+                <option value="Arquitetura">Arquitetura</option>
+                <option value="Estrutura">Estrutura</option>
+                <option value="Complementares">Complementares</option>
+                <option value="Obras">Obras</option>
+              </select>
+            </div>
+
+            <!-- Projetista / Responsável -->
+            <div class="form-group">
+              <label for="form-projetista" class="form-label required">Responsável Técnico</label>
+              <select id="form-projetista" class="form-select" required>
+                <option value="Eduardo Marques">Eduardo Marques (Arquiteto Projetista)</option>
+                <option value="Luan Almeida">Luan Almeida (Engenheiro Calculista)</option>
+                <option value="Erick Santiago">Erick Santiago (Engenheiro de Obra)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Data de Conclusão -->
+            <div class="form-group">
+              <label for="form-data" class="form-label required">Data Limite de Conclusão (DD-MM-YYYY)</label>
+              <input type="text" id="form-data" class="form-input" placeholder="DD-MM-YYYY (Ex: 15-08-2026)" required pattern="\d{2}-\d{2}-\d{4}">
+              <span class="form-help">Padrão do documento: DD-MM-YYYY</span>
+            </div>
+
+            <!-- Porcentagem -->
+            <div class="form-group">
+              <div class="label-with-val">
+                <label for="form-porcentagem" class="form-label required">Porcentagem Concluída</label>
+                <span id="form-percent-display" class="percent-live-badge">0%</span>
+              </div>
+              <div class="slider-percent-wrapper">
+                <input type="range" id="form-porcentagem" min="0" max="100" value="0" class="range-slider">
+                <input type="number" id="form-porcentagem-num" min="0" max="100" value="0" class="input-num-sync">
+              </div>
+            </div>
+          </div>
+
+          <!-- Status Calculado Preview -->
+          <div class="status-preview-box">
+            <span class="preview-label">Status Calculado Automaticamente:</span>
+            <div id="form-status-preview" class="status-preview-tag status-nao-iniciado">
+              <span class="dot"></span>
+              <span class="text">Não Iniciado</span>
+            </div>
+          </div>
+
+          <!-- Ações do Modal -->
+          <div class="modal-actions">
+            <button type="button" id="btn-cancel-modal" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="save"></i>
+              <span>Salvar Tarefa</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL DE RELATÓRIO EXECUTIVO PDF COMPLETO -->
+    <div id="report-modal" class="modal-overlay">
+      <div class="modal-card report-modal-card">
+        <div class="modal-header report-modal-header no-print">
+          <div class="modal-title-wrapper">
+            <div class="modal-icon-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              <i data-lucide="file-check-2"></i>
+            </div>
+            <div>
+              <h2>Relatório Executivo Oficial de Cronograma & Obras</h2>
+              <p class="modal-subtitle">Dossiê técnico consolidado para o cliente com alto contraste e clareza</p>
+            </div>
+          </div>
+          <div class="report-actions-top">
+            <button id="btn-print-report" class="btn btn-secondary" title="Imprimir Relatório">
+              <i data-lucide="printer"></i>
+              <span>Imprimir</span>
+            </button>
+            <button id="btn-download-pdf" class="btn btn-primary" title="Baixar Arquivo PDF">
+              <i data-lucide="download"></i>
+              <span>Baixar PDF</span>
+            </button>
+            <button id="btn-close-report" class="btn-close" aria-label="Fechar Modal">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ÁREA IMPRIMÍVEL DO RELATÓRIO (A4 / EXPORTÁVEL COM ALTO CONTRASTE) -->
+        <div class="report-scroll-container">
+          <!-- Folha A4 do Relatório Executivo -->
+          <div id="report-printable-area" class="report-document" style="color: #020617; background: #ffffff; border: 2px solid #0f172a; padding: 32px 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            
+            <!-- 1. Cabeçalho Institucional do Documento -->
+            <div class="report-doc-header" style="border-bottom: 3px solid #0f172a; padding-bottom: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div class="report-doc-brand" style="display: flex; align-items: center; gap: 14px;">
+                <div class="report-brand-logo-wrap" style="width: 68px; height: 68px; border: 2px solid #0f172a; border-radius: 8px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #ffffff;">
+                  <img src="logo.png" alt="ArqVértice Logo" class="report-logo-img" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
+                <div>
+                  <h1 class="report-doc-title" style="font-size: 1.45rem; font-weight: 900; color: #020617; letter-spacing: -0.02em; margin: 0;">RELATÓRIO EXECUTIVO DE CRONOGRAMA & OBRAS</h1>
+                  <p class="report-doc-subtitle" style="font-size: 0.8125rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.05em; margin: 3px 0 2px 0;">ArqVértice • Arquitetura, Estrutura & Engenharia</p>
+                  <p style="font-size: 0.7rem; color: #334155; font-weight: 600; margin: 0;">Excelência técnica, organização e rigor executivo do projeto ao canteiro de obras.</p>
+                </div>
+              </div>
+              <div class="report-doc-meta" style="font-size: 0.78rem; color: #0f172a; text-align: right; display: flex; flex-direction: column; gap: 3px; font-weight: 600;">
+                <div><strong style="color: #020617;">Emissão:</strong> <span id="report-date-emission">-</span></div>
+                <div><strong style="color: #020617;">Documento:</strong> Dossiê de Acompanhamento Físico</div>
+                <div><strong style="color: #020617;">Status Geral:</strong> <span id="report-doc-status" class="report-status-badge" style="display: inline-block; padding: 3px 10px; border-radius: 4px; font-weight: 800; background: #dbeafe; color: #1e3a8a; border: 1px solid #93c5fd;">Em Andamento</span></div>
+              </div>
+            </div>
+
+            <!-- 2. FICHA TÉCNICA E DADOS CADASTRAIS DO EMPREENDIMENTO -->
+            <div class="report-section-block" style="margin-bottom: 16px;">
+              <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
+                1. DADOS DE ENTRADA E FICHA TÉCNICA DO PROJETO
+              </h3>
+              
+              <div style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 0.75rem;">
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">OBRA:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-obra">Residência de Praia</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">CLIENTE / CONTRATANTE:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-cliente">Pedro</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">LOCALIZAÇÃO:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-local">Loteamento Praia Bela, Litoral Sul</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">LOTE / QUADRA:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-lote">Lote 14, Quadra B</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">ÁREA CONSTRUÍDA:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-areaconst">385,00 m²</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">ÁREA DO LOTE:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-areaterreno">450,00 m² (15m x 30m)</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">ZONEAMENTO:</span>
+                  <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-zona">Zona Residencial (ZR-1)</strong>
+                </div>
+                <div>
+                  <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">CRONOGRAMA CONTRATUAL:</span>
+                  <strong style="color: #0369a1; font-size: 0.8125rem; font-weight: 900;" id="rep-cad-prazos">12/06/2026 a 30/11/2026</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. QUADRO DE RESPONSABILIDADES TÉCNICAS -->
+            <div class="report-section-block" style="margin-bottom: 16px;">
+              <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
+                2. QUADRO TÉCNICO DE ENGENHARIA & ARQUITETURA
+              </h3>
+              
+              <div style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 0.75rem;">
+                <div style="border-left: 4px solid #c2410c; padding-left: 10px;">
+                  <strong style="color: #c2410c; display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 800;">🏗️ Execução de Obra</strong>
+                  <span style="font-weight: 900; color: #020617; font-size: 0.85rem; display: block;">Erick Santiago</span>
+                  <span style="color: #334155; font-size: 0.7rem; font-weight: 600; display: block; margin-top: 2px;">Engenheiro de Obra • Gestão de Campo e Canteiro</span>
+                </div>
+                <div style="border-left: 4px solid #b45309; padding-left: 10px;">
+                  <strong style="color: #b45309; display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 800;">🏢 Projeto Estrutural</strong>
+                  <span style="font-weight: 900; color: #020617; font-size: 0.85rem; display: block;">Luan Almeida</span>
+                  <span style="color: #334155; font-size: 0.7rem; font-weight: 600; display: block; margin-top: 2px;">Engenheiro Calculista • Fundações, Formas e Armaduras</span>
+                </div>
+                <div style="border-left: 4px solid #4338ca; padding-left: 10px;">
+                  <strong style="color: #4338ca; display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 800;">📐 Arquitetura & Complementares</strong>
+                  <span style="font-weight: 900; color: #020617; font-size: 0.85rem; display: block;">Eduardo Marques</span>
+                  <span style="color: #334155; font-size: 0.7rem; font-weight: 600; display: block; margin-top: 2px;">Arquiteto Projetista • 3D, Elétrico e Hidrossanitário</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. PARECER TÉCNICO EXPLICATIVO PARA O CLIENTE -->
+            <div class="report-section-block" style="margin-bottom: 16px;">
+              <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
+                3. PARECER TÉCNICO EXECUTIVO DO CRONOGRAMA
+              </h3>
+              <div style="background: #ffffff; border: 1.5px solid #0f172a; border-left: 6px solid #0f172a; border-radius: 8px; padding: 12px 16px; font-size: 0.78rem; color: #020617; line-height: 1.6; font-weight: 500;">
+                <p style="margin: 0 0 8px 0; color: #020617;">
+                  Prezado cliente <strong style="color: #020617;">Pedro</strong>, o presente relatório consolida o acompanhamento físico de projetos e planejamento executivo da sua <strong style="color: #020617;">Residência de Praia</strong>.
+                </p>
+                <div style="color: #0f172a; display: flex; flex-direction: column; gap: 4px;">
+                  <div>• <strong style="color: #14532d;">Etapas Concluídas (100%):</strong> Estudo Preliminar e Projeto Básico de Arquitetura, além do Projeto Pré-Formas de Estrutura.</div>
+                  <div>• <strong style="color: #1e3a8a;">Etapas em Desenvolvimento Ativo:</strong> Projeto de Formas Finais (90%), Modelagem 3D (30%), Projeto de Armaduras (30%), Projeto de Fundação (10%) e Projeto Executivo de Arquitetura (20%).</div>
+                  <div>• <strong style="color: #c2410c;">Próximas Fases Programadas:</strong> Renderizações 3D em alta resolução, Projetos Complementares (Instalações Elétricas e Hidrossanitárias) e Mobilização para Execução de Obra.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. RESUMO DE INDICADORES DE DESEMPENHO (KPIS) -->
+            <div class="report-section-block" style="margin-bottom: 16px;">
+              <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
+                4. RESUMO DE AVANÇO FÍSICO POR DISCIPLINA
+              </h3>
+              
+              <div class="report-kpi-grid" style="display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 10px;">
+                <!-- Progresso Geral -->
+                <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #0f172a; color: #020617; padding: 10px 12px; border-radius: 8px;">
+                  <span class="report-kpi-label" style="color: #0f172a; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">Progresso Geral</span>
+                  <div class="report-kpi-val" id="report-kpi-total-val" style="font-size: 1.5rem; font-weight: 900; color: #0284c7; margin: 4px 0;">34%</div>
+                  <div class="report-progress-track" style="background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden;">
+                    <div class="report-progress-bar" id="report-kpi-total-bar" style="width: 34%; background: #0284c7; height: 100%;"></div>
+                  </div>
+                  <span class="report-kpi-sub" id="report-kpi-total-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">3 de 14 concluídas</span>
+                </div>
+
+                <!-- Arquitetura -->
+                <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #7c3aed; padding: 10px 12px; border-radius: 8px;">
+                  <div class="report-kpi-header-row" style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800;">
+                    <span class="report-kpi-label" style="color: #6d28d9;">Arquitetura</span>
+                    <span class="report-kpi-author" style="color: #0f172a; font-size: 0.625rem; background: #ede9fe; padding: 1px 5px; border-radius: 3px;">Eduardo</span>
+                  </div>
+                  <div class="report-kpi-val text-arq" id="report-kpi-arq-val" style="font-size: 1.3rem; font-weight: 900; color: #6d28d9; margin: 4px 0;">50%</div>
+                  <div class="report-progress-track" style="background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden;">
+                    <div class="report-progress-bar bg-arq" id="report-kpi-arq-bar" style="width: 50%; background: #6d28d9; height: 100%;"></div>
+                  </div>
+                  <span class="report-kpi-sub" id="report-kpi-arq-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">2/5 finalizadas</span>
+                </div>
+
+                <!-- Estrutura -->
+                <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #d97706; padding: 10px 12px; border-radius: 8px;">
+                  <div class="report-kpi-header-row" style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800;">
+                    <span class="report-kpi-label" style="color: #b45309;">Estrutura</span>
+                    <span class="report-kpi-author" style="color: #0f172a; font-size: 0.625rem; background: #fef3c7; padding: 1px 5px; border-radius: 3px;">Luan</span>
+                  </div>
+                  <div class="report-kpi-val text-est" id="report-kpi-est-val" style="font-size: 1.3rem; font-weight: 900; color: #b45309; margin: 4px 0;">58%</div>
+                  <div class="report-progress-track" style="background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden;">
+                    <div class="report-progress-bar bg-est" id="report-kpi-est-bar" style="width: 58%; background: #b45309; height: 100%;"></div>
+                  </div>
+                  <span class="report-kpi-sub" id="report-kpi-est-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">1/4 finalizadas</span>
+                </div>
+
+                <!-- Complementares -->
+                <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #0891b2; padding: 10px 12px; border-radius: 8px;">
+                  <div class="report-kpi-header-row" style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800;">
+                    <span class="report-kpi-label" style="color: #0e7490;">Complementares</span>
+                    <span class="report-kpi-author" style="color: #0f172a; font-size: 0.625rem; background: #cffafe; padding: 1px 5px; border-radius: 3px;">Eduardo</span>
+                  </div>
+                  <div class="report-kpi-val text-comp" id="report-kpi-comp-val" style="font-size: 1.3rem; font-weight: 900; color: #0e7490; margin: 4px 0;">0%</div>
+                  <div class="report-progress-track" style="background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden;">
+                    <div class="report-progress-bar bg-comp" id="report-kpi-comp-bar" style="width: 0%; background: #0e7490; height: 100%;"></div>
+                  </div>
+                  <span class="report-kpi-sub" id="report-kpi-comp-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">4 a iniciar</span>
+                </div>
+
+                <!-- Obras -->
+                <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #ea580c; padding: 10px 12px; border-radius: 8px;">
+                  <div class="report-kpi-header-row" style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800;">
+                    <span class="report-kpi-label" style="color: #c2410c;">Execução Obras</span>
+                    <span class="report-kpi-author" style="color: #0f172a; font-size: 0.625rem; background: #ffedd5; padding: 1px 5px; border-radius: 3px;">Erick</span>
+                  </div>
+                  <div class="report-kpi-val text-obras" id="report-kpi-obr-val" style="font-size: 1.3rem; font-weight: 900; color: #c2410c; margin: 4px 0;">0%</div>
+                  <div class="report-progress-track" style="background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden;">
+                    <div class="report-progress-bar bg-obras" id="report-kpi-obr-bar" style="width: 0%; background: #c2410c; height: 100%;"></div>
+                  </div>
+                  <span class="report-kpi-sub" id="report-kpi-obr-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">Não iniciada</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. QUADRO DETALHADO DE ENTREGAS TÉCNICAS COM ALTO CONTRASTE -->
+            <div class="report-section-block" style="margin-bottom: 16px;">
+              <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
+                5. QUADRO CONSOLIDADO DE ETAPAS & ENTREGAS
+              </h3>
+
+              <table class="report-table" style="width: 100%; border-collapse: collapse; font-size: 0.75rem; color: #020617; border: 1.5px solid #0f172a;">
+                <thead>
+                  <tr style="background: #0f172a; color: #ffffff;">
+                    <th style="width: 28%; padding: 8px 10px; text-align: left; font-weight: 800; color: #ffffff;">Descrição / Etapa</th>
+                    <th style="width: 16%; padding: 8px 10px; text-align: left; font-weight: 800; color: #ffffff;">Disciplina</th>
+                    <th style="width: 18%; padding: 8px 10px; text-align: left; font-weight: 800; color: #ffffff;">Responsável Técnico</th>
+                    <th style="width: 13%; padding: 8px 10px; text-align: left; font-weight: 800; color: #ffffff;">Data Limite</th>
+                    <th style="width: 14%; padding: 8px 10px; text-align: left; font-weight: 800; color: #ffffff;">Avanço Físico</th>
+                    <th style="width: 11%; padding: 8px 10px; text-align: center; font-weight: 800; color: #ffffff;">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="report-table-tbody">
+                  <!-- Linhas injetadas via JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- 7. LEGENDA OFICIAL -->
+            <div class="report-legend-block" style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.72rem;">
+              <strong style="color: #020617; font-size: 0.75rem;">Critérios Oficiais de Acompanhamento:</strong>
+              <div class="report-legend-row" style="display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;">
+                <span class="legend-badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #7dd3fc; padding: 3px 8px; border-radius: 4px; font-weight: 800;">&gt;= 0% (Fase Inicial)</span>
+                <span class="legend-badge" style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 3px 8px; border-radius: 4px; font-weight: 800;">&lt; 40% a &lt; 99% (Em Andamento)</span>
+                <span class="legend-badge" style="background: #fef08a; color: #854d0e; border: 1px solid #fde047; padding: 3px 8px; border-radius: 4px; font-weight: 800;">&gt;= 99% (Concluído)</span>
+                <span class="legend-badge" style="background: #fee2e2; color: #b91c1c; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 4px; font-weight: 800;">⚠️ Alerta: Entrega em ≤ 7 dias</span>
+              </div>
+            </div>
+
+            <!-- 8. RODAPÉ E ASSINATURAS FORMAIS -->
+            <div class="report-doc-footer" style="border-top: 2px solid #0f172a; padding-top: 16px;">
+              <div class="signatures-wrapper" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; text-align: center;">
+                <div class="signature-box">
+                  <div class="signature-line" style="border-bottom: 2px solid #0f172a; margin-bottom: 6px;"></div>
+                  <span class="signature-name" style="font-weight: 900; font-size: 0.8rem; color: #020617; display: block;">Eduardo Marques</span>
+                  <span class="signature-role" style="font-size: 0.6875rem; color: #334155; font-weight: 700;">Arquiteto Projetista</span>
+                </div>
+                <div class="signature-box">
+                  <div class="signature-line" style="border-bottom: 2px solid #0f172a; margin-bottom: 6px;"></div>
+                  <span class="signature-name" style="font-weight: 900; font-size: 0.8rem; color: #020617; display: block;">Luan Almeida</span>
+                  <span class="signature-role" style="font-size: 0.6875rem; color: #334155; font-weight: 700;">Engenheiro Calculista</span>
+                </div>
+                <div class="signature-box">
+                  <div class="signature-line" style="border-bottom: 2px solid #0f172a; margin-bottom: 6px;"></div>
+                  <span class="signature-name" style="font-weight: 900; font-size: 0.8rem; color: #020617; display: block;">Erick Santiago</span>
+                  <span class="signature-role" style="font-size: 0.6875rem; color: #334155; font-weight: 700;">Engenheiro de Obra</span>
+                </div>
+                <div class="signature-box">
+                  <div class="signature-line" style="border-bottom: 2px solid #0f172a; margin-bottom: 6px;"></div>
+                  <span class="signature-name" style="font-weight: 900; font-size: 0.8rem; color: #020617; display: block;">Pedro</span>
+                  <span class="signature-role" style="font-size: 0.6875rem; color: #334155; font-weight: 700;">Cliente / Contratante</span>
+                </div>
+              </div>
+              <p class="report-footer-sub" style="font-size: 0.6875rem; color: #475569; text-align: center; margin: 12px 0 0 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                Documento Oficial de Engenharia e Arquitetura • ArqVértice • Validade Técnica e Contratual
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICAÇÃO TOAST FLUTUANTE -->
+    <div id="toast" class="toast">
+      <i data-lucide="check-circle" class="toast-icon"></i>
+      <span id="toast-message">Ação concluída com sucesso!</span>
+    </div>
+
+  </div>
+
+  <!-- Scripts da Aplicação -->
+  <script src="app.js"></script>
+</body>
+</html>
