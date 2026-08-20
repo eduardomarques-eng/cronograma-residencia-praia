@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Briefing ArqVértice | Entrevista de Projeto</title>
+
+  <!-- Fixa a base das URLs no diretório desta página.
+       Servida como /briefing (sem barra final), um caminho relativo como
+       "briefing.js" resolveria na raiz do site e traria o CSS do Cronograma.
+       Roda antes de qualquer <link>/<script>, então o parser já usa a base certa. -->
+  <base href="./">
+  <script>
+    (function () {
+      var p = location.pathname;
+      if (!/\/$/.test(p)) {
+        p = /\.html?$/i.test(p) ? p.slice(0, p.lastIndexOf('/') + 1) : p + '/';
+      }
+      document.getElementsByTagName('base')[0].setAttribute('href', p);
+    })();
+  </script>
+  <meta name="description" content="Roteiro de briefing da ArqVértice: entrevista guiada com o cliente para levantar perfil, terreno, programa de necessidades, estilo, iluminação, orçamento e prazos.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ==========================================================================
+     BIBLIOTECA DE ILUSTRAÇÕES (SVG)
+     Desenhos vetoriais que ilustram estilos arquitetônicos e ambientes.
+     Usam currentColor, então acompanham o tema e a cor de cada cartão.
+     ========================================================================== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+
+  <!-- ---------- ESTILOS ARQUITETÔNICOS ---------- -->
+
+  <symbol id="ilu-minimalista" viewBox="0 0 120 80">
+    <rect x="18" y="30" width="84" height="38" rx="1" fill="currentColor" opacity="0.10"/>
+    <path d="M18 30h84v38H18z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <path d="M14 30h92" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <rect x="30" y="41" width="20" height="16" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M74 68V47h14v21" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M10 68h100" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="60" cy="20" r="5" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.5"/>
+  </symbol>
+
+  <symbol id="ilu-rustico" viewBox="0 0 120 80">
+    <path d="M22 36 60 16l38 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+    <path d="M28 36v32h64V36" fill="currentColor" opacity="0.10"/>
+    <path d="M28 36v32h64V36" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <!-- ripado de madeira -->
+    <path d="M36 42v22M46 42v22M56 42v22M66 42v22M76 42v22M84 42v22" stroke="currentColor" stroke-width="1.4" opacity="0.55"/>
+    <path d="M52 68V52h16v16" fill="none" stroke="currentColor" stroke-width="2"/>
+    <!-- palmeira -->
+    <path d="M104 68V48" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M104 48c-6-5-11-4-14-1M104 48c6-5 11-4 14-1M104 48c-2-7 1-11 4-13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M8 68h104" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="ilu-industrial" viewBox="0 0 120 80">
+    <path d="M20 34h56v34H20z" fill="currentColor" opacity="0.10"/>
+    <path d="M20 34h56v34H20z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <!-- tijolinhos -->
+    <path d="M20 44h56M20 54h56M20 64h56" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+    <path d="M34 34v10M62 34v10M27 44v10M48 44v10M69 44v10M34 54v10M62 54v10" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+    <!-- telhado dente de serra -->
+    <path d="M20 34l10-12 10 12M40 34l10-12 10 12M60 34l10-12 6 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+    <!-- estrutura metálica / conduletes -->
+    <path d="M84 26v42M84 26h22M84 68h22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M84 40h22M84 54h22" stroke="currentColor" stroke-width="1.4" opacity="0.6"/>
+    <circle cx="95" cy="33" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M10 68h102" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="ilu-contemporaneo" viewBox="0 0 120 80">
+    <!-- volume em balanço -->
+    <path d="M14 40h62v14H14z" fill="currentColor" opacity="0.10"/>
+    <path d="M14 40h62v14H14z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <path d="M34 54h52v14H34z" fill="currentColor" opacity="0.16"/>
+    <path d="M34 54h52v14H34z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <!-- pele de vidro -->
+    <path d="M24 40v14M44 40v14M64 40v14" stroke="currentColor" stroke-width="1.4" opacity="0.6"/>
+    <path d="M46 54v14M58 54v14M70 54v14" stroke="currentColor" stroke-width="1.4" opacity="0.6"/>
+    <!-- laje superior -->
+    <path d="M10 40h70" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <!-- espelho d'agua -->
+    <path d="M12 72h40M18 76h28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+    <path d="M10 68h100" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="ilu-classico" viewBox="0 0 120 80">
+    <!-- frontão -->
+    <path d="M18 32 60 12l42 20z" fill="currentColor" opacity="0.10"/>
+    <path d="M18 32 60 12l42 20z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M14 32h92" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path d="M16 38h88" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    <!-- colunas -->
+    <path d="M26 38v26M44 38v26M62 38v26M80 38v26M96 38v26" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/>
+    <!-- capitel e base -->
+    <path d="M22 42h8M40 42h8M58 42h8M76 42h8M92 42h8" stroke="currentColor" stroke-width="1.6" opacity="0.7"/>
+    <path d="M10 64h100" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M14 68h92" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  </symbol>
+
+  <!-- ---------- AMBIENTES ESPECIAIS ---------- -->
+
+  <symbol id="ilu-gym" viewBox="0 0 120 80">
+    <path d="M16 24h88v44H16z" fill="currentColor" opacity="0.07"/>
+    <path d="M16 24h88v44H16z" fill="none" stroke="currentColor" stroke-width="2" opacity="0.5"/>
+    <!-- halter -->
+    <path d="M38 44h44" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    <rect x="28" y="35" width="9" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <rect x="83" y="35" width="9" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <rect x="20" y="39" width="7" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    <rect x="93" y="39" width="7" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    <!-- banco -->
+    <path d="M42 60h36M48 60v6M72 60v6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="ilu-gamer" viewBox="0 0 120 80">
+    <!-- monitor ultrawide -->
+    <path d="M22 20h76v30H22z" fill="currentColor" opacity="0.12"/>
+    <path d="M22 20h76v30H22z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <path d="M56 50v8M44 58h32" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- fita de LED -->
+    <path d="M28 26h20M28 32h34M28 38h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    <!-- cadeira gamer -->
+    <path d="M84 46v18M76 64h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M78 40h12v10H78z" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M14 68h92" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" opacity="0.6"/>
+  </symbol>
+
+  <symbol id="ilu-office" viewBox="0 0 120 80">
+    <!-- prateleira -->
+    <path d="M18 20h34v10H18z" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M25 22v6M32 22v6M39 22v6M46 22v6" stroke="currentColor" stroke-width="1.6" opacity="0.7"/>
+    <!-- mesa -->
+    <path d="M16 52h88" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path d="M24 52v16M96 52v16" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- monitor -->
+    <path d="M56 30h34v18H56z" fill="currentColor" opacity="0.12"/>
+    <path d="M56 30h34v18H56z" fill="none" stroke="currentColor" stroke-width="2.2"/>
+    <path d="M73 48v4" stroke="currentColor" stroke-width="2.2"/>
+    <!-- luminária -->
+    <path d="M30 52V38l10-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    <path d="M36 30h10l-3 7h-10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="ilu-gourmet" viewBox="0 0 120 80">
+    <!-- coifa -->
+    <path d="M40 16h40l-6 12H46z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+    <!-- churrasqueira -->
+    <path d="M34 34h52v14H34z" fill="currentColor" opacity="0.12"/>
+    <path d="M34 34h52v14H34z" fill="none" stroke="currentColor" stroke-width="2.4"/>
+    <path d="M42 34v14M52 34v14M62 34v14M72 34v14" stroke="currentColor" stroke-width="1.4" opacity="0.65"/>
+    <!-- bancada / ilha -->
+    <path d="M20 56h80" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+    <path d="M28 56v12M92 56v12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    <!-- banquetas -->
+    <path d="M44 62h10M49 62v6M66 62h10M71 62v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="ilu-outro" viewBox="0 0 120 80">
+    <path d="M22 18h76v50H22z" fill="currentColor" opacity="0.07"/>
+    <path d="M22 18h76v50H22z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="6 5"/>
+    <path d="M60 32v22M49 43h22" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  </symbol>
+
+  </defs>
+</svg>
+
+
+<div class="app">
+
+  <!-- ======================================================================
+       CABEÇALHO: IDENTIDADE ARQVÉRTICE + FICHA DO CLIENTE
+       ====================================================================== -->
+  <header class="cabecalho">
+
+    <div class="topo">
+      <div class="marca">
+        <div class="marca-logo"><img src="logo.png" alt="ArqVértice"></div>
+        <div class="marca-texto">
+          <span class="marca-tag"><span class="pulso"></span> ARQVÉRTICE • ARQUITETURA, ESTRUTURA &amp; ENGENHARIA</span>
+          <h1>Briefing de Projeto</h1>
+          <p>Entrevista guiada para entender quem você é, como vive e o que o projeto precisa resolver</p>
+        </div>
+      </div>
+
+      <div class="acoes">
+        <button id="btn-tema" class="btn btn-icone" title="Alternar tema claro/escuro">
+          <i data-lucide="sun" class="icone-sol"></i>
+          <i data-lucide="moon" class="icone-lua"></i>
+        </button>
+        <button id="btn-pdf" class="btn btn-destaque" title="Gerar o briefing em PDF">
+          <i data-lucide="file-text"></i><span>Briefing em PDF</span>
+        </button>
+        <button id="btn-json" class="btn btn-secundario" title="Exportar as respostas em JSON">
+          <i data-lucide="download"></i><span>Exportar</span>
+        </button>
+        <button id="btn-limpar" class="btn btn-secundario" title="Apagar todas as respostas">
+          <i data-lucide="rotate-ccw"></i><span>Limpar</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Ficha de identificação preenchida na abertura da reunião -->
+    <section class="ficha">
+      <div class="ficha-titulo">
+        <i data-lucide="user-square"></i>
+        <span>IDENTIFICAÇÃO DO CLIENTE E DO PROJETO</span>
+      </div>
+
+      <div class="ficha-grade" id="ficha-grade"><!-- gerado por briefing.js --></div>
+
+      <div class="ficha-obs">
+        <label class="rotulo" for="cli-observacoes">
+          <i data-lucide="message-square-quote"></i>
+          Observações e pedidos do cliente
+          <span class="rotulo-dica">O que ele fez questão de dizer, com as palavras dele</span>
+        </label>
+        <textarea id="cli-observacoes" name="cliente_observacoes" class="campo campo-area" rows="4"
+          placeholder="Registre aqui o que o cliente trouxe espontaneamente: expectativas, receios, referências, restrições, histórias sobre o terreno..."></textarea>
+      </div>
+
+      <!-- Dados fixos do escritório, para o documento sair identificado -->
+      <div class="escritorio">
+        <div class="escritorio-item">
+          <span class="escritorio-rot">Escritório</span>
+          <strong>ArqVértice • Arquitetura, Estrutura &amp; Engenharia</strong>
+        </div>
+        <div class="escritorio-item">
+          <span class="escritorio-rot">Arquiteto responsável</span>
+          <strong>Eduardo Marques</strong>
+        </div>
+        <div class="escritorio-item">
+          <span class="escritorio-rot">Engenheiro calculista</span>
+          <strong>Luan Almeida</strong>
+        </div>
+        <div class="escritorio-item">
+          <span class="escritorio-rot">Engenheiro de obra</span>
+          <strong>Erick Santiago</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- Andamento do preenchimento -->
+    <div class="progresso-barra">
+      <div class="progresso-info">
+        <i data-lucide="list-checks"></i>
+        <span>Andamento do briefing</span>
+        <strong id="progresso-texto">0 de 0 respondidas</strong>
+      </div>
+      <div class="progresso-trilha"><div class="progresso-preenchimento" id="progresso-preenchimento"></div></div>
+      <span class="progresso-pct" id="progresso-pct">0%</span>
+    </div>
+  </header>
+
+  <!-- Conteúdo do roteiro, gerado por briefing.js a partir de ROTEIRO -->
+  <main id="roteiro" class="roteiro"></main>
+
+  <footer class="rodape">
+    <p>ArqVértice • Arquitetura, Estrutura &amp; Engenharia — as respostas ficam salvas neste navegador enquanto você preenche.</p>
+  </footer>
+</div>
+
+<!-- Área imprimível do PDF, montada na hora da exportação.
+     Quem sai da tela é o invólucro: #area-pdf precisa continuar estático, senão
+     o html2pdf clona um elemento fora de fluxo e gera um PDF de altura zero. -->
+<div class="pdf-esconderijo" aria-hidden="true">
+  <div id="area-pdf" class="area-pdf"></div>
+</div>
+
+<div id="aviso" class="aviso"><i data-lucide="check-circle-2"></i><span id="aviso-texto"></span></div>
+
+<!-- roteiro.js = as perguntas · exportar.js = PDF e JSON · briefing.js = o motor -->
+<script src="roteiro.js"></script>
+<script src="exportar.js"></script>
+<script src="briefing.js"></script>
+</body>
+</html>
