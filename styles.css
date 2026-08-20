@@ -3091,3 +3091,50 @@ body {
 
   .kanban-card .card-title { overflow-wrap: anywhere; }
 }
+
+/* ==========================================================================
+   SELO DE ORIGEM DOS DADOS
+   Diz se o que esta na tela e compartilhado (banco) ou so deste navegador.
+   ========================================================================== */
+.indicador-dados {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.indicador-dados:hover { transform: translateY(-1px); }
+
+.indicador-dados i { width: 14px; height: 14px; }
+
+.indicador-dados.is-local {
+  border-color: var(--border-medium);
+  color: var(--text-secondary);
+}
+
+.indicador-dados.is-nuvem {
+  border-color: var(--color-in-progress);
+  background: var(--color-in-progress-bg);
+  color: var(--color-in-progress);
+}
+
+.indicador-dados.is-nuvem-admin {
+  border-color: var(--color-completed);
+  background: var(--color-completed-bg);
+  color: var(--color-completed);
+}
+
+@media (max-width: 768px) {
+  .indicador-dados { flex: 1 1 100%; justify-content: center; }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "cronograma-arqvertice",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Cronograma de projetos e obra da ArqVertice — painel do cliente, Kanban por disciplina e relatorio executivo em PDF.",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

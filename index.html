@@ -46,6 +46,11 @@
         </div>
 
         <div class="header-actions">
+          <!-- De onde vem o dado: nuvem compartilhada ou só este navegador -->
+          <button id="indicador-dados" class="indicador-dados is-local" title="Origem dos dados">
+            <i data-lucide="hard-drive"></i><span>Local · só neste navegador</span>
+          </button>
+
           <button id="btn-theme-toggle" class="btn btn-icon" title="Alternar Tema Claro/Escuro">
             <i data-lucide="sun" class="sun-icon"></i>
             <i data-lucide="moon" class="moon-icon"></i>
@@ -1015,6 +1020,7 @@
 
   <!-- Scripts da Aplicação -->
   <script src="painel-cliente.js"></script>
+  <script src="api-cliente.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

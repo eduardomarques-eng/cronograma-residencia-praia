@@ -2,10 +2,14 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": null,
-  "installCommand": null,
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 15
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
@@ -15,7 +19,11 @@
       ]
     },
     {
-      "source": "/(app|painel-cliente).js",
+      "source": "/api/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store, max-age=0" }]
+    },
+    {
+      "source": "/(app|painel-cliente|api-cliente).js",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     },
     {

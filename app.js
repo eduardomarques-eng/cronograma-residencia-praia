@@ -819,6 +819,9 @@ function updateTaskProperty(taskId, updates) {
     };
     saveTasks();
     renderApp();
+
+    // Espelha no banco. No modo local isso e um no-op.
+    if (typeof Remoto !== 'undefined') Remoto.atualizarTarefa(taskId, updates);
   }
 }
 
@@ -844,32 +847,28 @@ function saveTaskFromModal(e) {
     return;
   }
 
+  const campos = {
+    descricao_etapa: descricao,
+    disciplina_projeto: disciplina,
+    projetista: projetista,
+    data_conclusao: data,
+    porcentagem: porcentagem
+  };
+
   if (id) {
     // Edição
     const index = AppState.tasks.findIndex(t => t.id === id);
     if (index !== -1) {
-      AppState.tasks[index] = {
-        ...AppState.tasks[index],
-        descricao_etapa: descricao,
-        disciplina_projeto: disciplina,
-        projetista: projetista,
-        data_conclusao: data,
-        porcentagem: porcentagem
-      };
+      AppState.tasks[index] = { ...AppState.tasks[index], ...campos };
       showToast('Tarefa atualizada com sucesso!');
+      if (typeof Remoto !== 'undefined') Remoto.atualizarTarefa(id, campos);
     }
   } else {
     // Nova Tarefa
-    const newTask = {
-      id: generateUUID(),
-      descricao_etapa: descricao,
-      disciplina_projeto: disciplina,
-      projetista: projetista,
-      data_conclusao: data,
-      porcentagem: porcentagem
-    };
+    const newTask = { id: generateUUID(), ...campos };
     AppState.tasks.push(newTask);
     showToast('Nova tarefa criada com sucesso!');
+    if (typeof Remoto !== 'undefined') Remoto.criarTarefa(newTask);
   }
 
   saveTasks();
@@ -886,6 +885,8 @@ window.deleteTask = function(taskId) {
     saveTasks();
     renderApp();
     showToast('Tarefa excluída.');
+
+    if (typeof Remoto !== 'undefined') Remoto.removerTarefa(taskId);
   }
 };
 
@@ -1031,6 +1032,17 @@ function showToast(msg) {
  * 14. EXPORTAÇÃO E RESET DE DADOS
  */
 function resetToSeedData() {
+  // No modo nuvem o banco e a fonte da verdade: restaurar so o cache local
+  // daria a ilusao de ter funcionado e seria desfeito no proximo carregamento.
+  if (typeof Remoto !== 'undefined' && Remoto.modo === 'nuvem') {
+    alert(
+      'O cronograma está vindo do banco de dados, então a restauração não pode ser feita por aqui — ' +
+      'ela seria desfeita no próximo carregamento.\n\n' +
+      'Para recarregar os dados originais, rode novamente o arquivo database/schema.sql na base.'
+    );
+    return;
+  }
+
   if (confirm('Deseja restaurar os dados originais do documento "Residência Praia - Pedro"? Todas as alterações locais serão substituídas.')) {
     AppState.tasks = JSON.parse(JSON.stringify(SEED_TASKS));
     saveTasks();
@@ -1073,6 +1085,23 @@ function initEventListeners() {
   // 1. Tema
   const btnTheme = document.getElementById('btn-theme-toggle');
   if (btnTheme) btnTheme.addEventListener('click', toggleTheme);
+
+  // Selo de origem dos dados: clicar pede/limpa a chave de administrador
+  const seloDados = document.getElementById('indicador-dados');
+  if (seloDados) {
+    seloDados.addEventListener('click', () => {
+      if (typeof Remoto === 'undefined') return;
+      if (Remoto.modo !== 'nuvem') {
+        alert(
+          'Nenhum banco de dados configurado para este endereço.\n\n' +
+          'As alterações estão sendo salvas apenas neste navegador — o cliente não as vê. ' +
+          'Configure DATABASE_URL e ADMIN_KEY na Vercel para ligar a nuvem.'
+        );
+        return;
+      }
+      Remoto.pedirChave();
+    });
+  }
 
   // 2. Ações do Cabeçalho
   const btnReset = document.getElementById('btn-reset-seed');
@@ -1355,6 +1384,8 @@ function saveProjectFromModal(e) {
   renderProjectInfo();
   closeProjectModal();
   showToast('Ficha técnica da obra atualizada com sucesso!');
+
+  if (typeof Remoto !== 'undefined') Remoto.salvarProjeto(AppState.projectInfo);
 }
 
 /**
@@ -1608,4 +1639,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initEventListeners();
   renderProjectInfo();
   renderApp();
+
+  // A tela ja esta pronta com o cache local. So agora vamos a rede: se houver
+  // banco, ele substitui o que esta na tela; se nao houver, nada muda.
+  if (typeof iniciarSincronizacao === 'function') {
+    iniciarSincronizacao();
+  }
 });
