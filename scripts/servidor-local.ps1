@@ -5,13 +5,17 @@
 # ============================================================================
 param(
   [int]$Port = 8123,
-  [switch]$NoBrowser
+  [switch]$NoBrowser,
+  # Pasta a servir. Sem isto, serve a raiz do projeto (pasta acima de \scripts).
+  # Use -Root para servir outro projeto, como o Briefing ArqVertice.
+  [string]$Root
 )
 
 $ErrorActionPreference = "Stop"
 
-# A pasta servida e a raiz do projeto (pasta acima de \scripts).
-$Root = Split-Path -Parent $PSScriptRoot
+if ([string]::IsNullOrWhiteSpace($Root)) {
+  $Root = Split-Path -Parent $PSScriptRoot
+}
 if (-not (Test-Path (Join-Path $Root "index.html"))) {
   Write-Host "ERRO: index.html nao encontrado em $Root" -ForegroundColor Red
   exit 1

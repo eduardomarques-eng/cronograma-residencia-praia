@@ -1,5 +1,4 @@
 # Arquivos que pertencem ao repositorio mas nao ao site publicado.
-server/
 scripts/
 database/
 *.bat
