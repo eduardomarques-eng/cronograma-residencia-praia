@@ -11,6 +11,10 @@
   --color-arq-bg: rgba(139, 92, 246, 0.12);
   --color-arq-border: rgba(139, 92, 246, 0.35);
 
+  --color-3d: #ec4899;
+  --color-3d-bg: rgba(236, 72, 153, 0.12);
+  --color-3d-border: rgba(236, 72, 153, 0.35);
+
   --color-est: #f59e0b;
   --color-est-bg: rgba(245, 158, 11, 0.12);
   --color-est-border: rgba(245, 158, 11, 0.35);
@@ -287,6 +291,8 @@ body {
 .logo-badge i {
   width: 26px;
   height: 26px;
+}
+
 .logo-badge-arqvertice {
   width: 78px;
   height: 78px;
@@ -2436,4 +2442,652 @@ body {
     max-width: 100%;
     padding: 0;
   }
+}
+
+/* ==========================================================================
+   PAINEL DO CLIENTE
+   Fase atual, equipe técnica, agrupamento e resumos do Kanban.
+   ========================================================================== */
+
+/* --- Disciplina 3D e apelidos de classe que faltavam ---------------------- */
+.badge-3d  { background: var(--color-3d-bg);  color: var(--color-3d);  border: 1px solid var(--color-3d-border); }
+.badge-obr { background: var(--color-obras-bg); color: var(--color-obras); border: 1px solid var(--color-obras-border); }
+.bg-3d { background: var(--color-3d) !important; }
+.disc-3d-badge  { background: #fce7f3; color: #9d174d; border: 1px solid #f9a8d4; }
+.disc-obr-badge { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
+.text-3d { color: var(--color-3d) !important; }
+.master-executor-item.disc-3d-border,
+.team-card.disc-3d-border { border-top: 3px solid var(--color-3d); }
+
+/* --- Ficha da obra agora ocupa a largura inteira -------------------------- */
+.master-info-card {
+  grid-template-columns: 1fr;
+}
+
+.master-team-block {
+  padding: 0 28px 24px;
+  background: var(--bg-surface-elevated);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 20px;
+}
+
+.team-block-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  margin-left: auto;
+}
+
+/* --- Cards de equipe técnica --------------------------------------------- */
+.team-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.team-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.team-card.disc-arq-border { border-top: 3px solid var(--color-arq); }
+.team-card.disc-est-border { border-top: 3px solid var(--color-est); }
+.team-card.disc-obr-border { border-top: 3px solid var(--color-obras); }
+
+.team-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.team-card-pct {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.team-disc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.team-disc-chip,
+.ks-chip {
+  font-size: 0.625rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.chip-arq  { background: var(--color-arq-bg);   color: var(--color-arq);   border: 1px solid var(--color-arq-border); }
+.chip-3d   { background: var(--color-3d-bg);    color: var(--color-3d);    border: 1px solid var(--color-3d-border); }
+.chip-est  { background: var(--color-est-bg);   color: var(--color-est);   border: 1px solid var(--color-est-border); }
+.chip-comp { background: var(--color-comp-bg);  color: var(--color-comp);  border: 1px solid var(--color-comp-border); }
+.chip-obr  { background: var(--color-obras-bg); color: var(--color-obras); border: 1px solid var(--color-obras-border); }
+.chip-none { background: var(--bg-surface-hover); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+
+.team-card-track,
+.ks-track,
+.fase-step-track {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-hover);
+  overflow: hidden;
+}
+
+.team-card-fill,
+.ks-fill,
+.fase-step-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--accent);
+}
+
+.fill-arq { background: var(--color-arq); }
+.fill-est { background: var(--color-est); }
+.fill-obr { background: var(--color-obras); }
+
+.team-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.team-card-foot strong { color: var(--text-primary); }
+
+.team-now {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-in-progress);
+  font-weight: 700;
+}
+
+.team-now i { width: 12px; height: 12px; flex-shrink: 0; }
+.team-now-idle { color: var(--text-muted); font-weight: 600; }
+
+/* --- Faixa de fase atual -------------------------------------------------- */
+.fase-section {
+  margin: 20px 0 0;
+  padding: 22px 26px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.fase-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.fase-head-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fase-head-title > i {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.fase-head-title h2 {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.fase-head-title p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0;
+  font-weight: 500;
+}
+
+.fase-now-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-active);
+}
+
+.fase-now-label {
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.fase-now-name {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.fase-now-pct {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.fase-track {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.fase-step {
+  position: relative;
+  padding: 16px 14px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.fase-step.is-wait { opacity: 0.62; }
+
+.fase-step.is-atual {
+  border-color: var(--border-active);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-3px);
+  opacity: 1;
+}
+
+.fase-you-are-here {
+  position: absolute;
+  top: -11px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 0.5875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.fase-you-are-here i { width: 11px; height: 11px; }
+
+.fase-step-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fase-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  font-size: 0.625rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fase-step-icon i { width: 16px; height: 16px; }
+
+.fase-step-state {
+  margin-left: auto;
+  font-size: 0.5875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.fase-step.is-done .fase-step-state { color: var(--color-completed); }
+.fase-step.is-running .fase-step-state { color: var(--color-in-progress); }
+
+.fase-step-name {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fase-step-resumo {
+  font-size: 0.6875rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+  min-height: 2.4em;
+}
+
+.fase-step-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fase-step-bar-row .fase-step-track { flex: 1; }
+
+.fase-step-pct {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  min-width: 34px;
+  text-align: right;
+}
+
+.fase-step-count {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Cor de cada fase na barra de progresso */
+.fase-tone-arq  .fase-step-fill { background: var(--color-arq); }
+.fase-tone-3d   .fase-step-fill { background: var(--color-3d); }
+.fase-tone-est  .fase-step-fill { background: var(--color-est); }
+.fase-tone-comp .fase-step-fill { background: var(--color-comp); }
+.fase-tone-obr  .fase-step-fill { background: var(--color-obras); }
+
+.fase-tone-arq  .fase-step-icon i { color: var(--color-arq); }
+.fase-tone-3d   .fase-step-icon i { color: var(--color-3d); }
+.fase-tone-est  .fase-step-icon i { color: var(--color-est); }
+.fase-tone-comp .fase-step-icon i { color: var(--color-comp); }
+.fase-tone-obr  .fase-step-icon i { color: var(--color-obras); }
+
+/* --- Detalhe da fase: em execução, próximas entregas e resumo ------------- */
+.fase-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.fase-detail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fase-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.625rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+}
+
+.fase-detail-title i { width: 13px; height: 13px; color: var(--accent); }
+
+.fase-detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fase-detail-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.fdl-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fdl-pct,
+.fdl-date {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fdl-date.is-late { color: var(--color-danger); }
+
+.fase-detail-empty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.fase-detail-resumo {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-subtle);
+}
+
+.fase-resumo-text {
+  font-size: 0.78125rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* --- Resumo no topo de cada coluna do Kanban ------------------------------ */
+.kanban-col-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.ks-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ks-avg {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.ks-avg strong {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+.ks-top .ks-track { flex: 1; }
+
+.ks-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ks-chip strong { font-family: var(--font-mono); }
+
+.ks-prazo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ks-prazo i { width: 13px; height: 13px; flex-shrink: 0; }
+.ks-prazo.is-late { color: var(--color-danger); }
+.ks-prazo.is-done { color: var(--color-completed); }
+
+.ks-empty {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* --- Agrupamento por disciplina dentro das colunas ------------------------ */
+.kanban-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.kanban-group-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-hover);
+  border-left: 3px solid var(--border-medium);
+}
+
+.kanban-group-icon i { width: 14px; height: 14px; }
+
+.kanban-group-name {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.kanban-group-count {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+}
+
+.kanban-group-avg {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.group-arq  .kanban-group-head { border-left-color: var(--color-arq); }
+.group-3d   .kanban-group-head { border-left-color: var(--color-3d); }
+.group-est  .kanban-group-head { border-left-color: var(--color-est); }
+.group-comp .kanban-group-head { border-left-color: var(--color-comp); }
+.group-obr  .kanban-group-head { border-left-color: var(--color-obras); }
+
+.group-arq  .kanban-group-icon i { color: var(--color-arq); }
+.group-3d   .kanban-group-icon i { color: var(--color-3d); }
+.group-est  .kanban-group-icon i { color: var(--color-est); }
+.group-comp .kanban-group-icon i { color: var(--color-comp); }
+.group-obr  .kanban-group-icon i { color: var(--color-obras); }
+
+.kanban-col-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* --- Responsivo ----------------------------------------------------------- */
+@media (max-width: 1200px) {
+  .fase-track { grid-template-columns: repeat(3, 1fr); }
+  .fase-detail { grid-template-columns: 1fr 1fr; }
+  .fase-detail-resumo { grid-column: 1 / -1; }
+}
+
+@media (max-width: 768px) {
+  .fase-section { padding: 18px 16px; }
+  .fase-track { grid-template-columns: 1fr; }
+  .fase-detail { grid-template-columns: 1fr; }
+  .master-team-block { padding: 18px 16px; }
+  .team-block-hint { display: none; }
+}
+
+/* ==========================================================================
+   AJUSTES DE TELA ESTREITA (CELULAR)
+   O cliente costuma abrir o link no telefone — nada pode estourar a largura.
+   ========================================================================== */
+@media (max-width: 768px) {
+  .filters-row { align-items: stretch; }
+
+  .filter-group {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  /* Sem min-width: 0 o select cresce até o maior <option> e empurra a página. */
+  .filter-group .select-wrapper {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .select-input,
+  .search-input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .master-top-bar,
+  .header-actions { flex-wrap: wrap; }
+
+  .header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+  .kanban-group-name { font-size: 0.625rem; }
+
+  .team-now { max-width: 100%; }
+
+  .fase-head { flex-direction: column; align-items: flex-start; }
+  .fase-now-tag { width: 100%; justify-content: flex-start; }
+}
+
+/* Impede o "grid blowout": sem min-width:0 a coluna cresce ate o conteudo
+   mais largo (o texto nowrap do resumo) e estoura a pagina no celular. */
+.kanban-column,
+.kanban-cards-list,
+.kanban-group,
+.kanban-card,
+.kanban-col-summary {
+  min-width: 0;
+}
+
+.kanban-group-head { flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .ks-prazo {
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .kanban-card .card-title { overflow-wrap: anywhere; }
 }

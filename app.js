@@ -59,7 +59,7 @@ const SEED_TASKS = [
   {
     id: 'b4b1a8d0-1c32-4e89-9a21-000000000004',
     descricao_etapa: 'Modelagem 3D',
-    disciplina_projeto: 'Arquitetura',
+    disciplina_projeto: '3D',
     projetista: 'Eduardo Marques',
     data_conclusao: '01-08-2026',
     porcentagem: 30
@@ -67,7 +67,7 @@ const SEED_TASKS = [
   {
     id: 'b4b1a8d0-1c32-4e89-9a21-000000000005',
     descricao_etapa: 'Renderização 3D (Imagens Finais)',
-    disciplina_projeto: 'Arquitetura',
+    disciplina_projeto: '3D',
     projetista: 'Eduardo Marques',
     data_conclusao: '15-08-2026',
     porcentagem: 0
@@ -329,7 +329,12 @@ function loadTasks() {
           if (proj === 'Eduardo') proj = 'Eduardo Marques';
           if ((proj === 'Luan' || proj === 'Luan Cavalcante') && t.disciplina_projeto !== 'Obras') proj = 'Luan Almeida';
           if (t.disciplina_projeto === 'Obras') proj = 'Erick Santiago';
-          return { ...t, projetista: proj };
+
+          // Migração: 3D deixou de ser subitem de Arquitetura e virou disciplina própria.
+          let disc = t.disciplina_projeto;
+          if (disc === 'Arquitetura' && /3d/i.test(t.descricao_etapa || '')) disc = '3D';
+
+          return { ...t, projetista: proj, disciplina_projeto: disc };
         });
 
         // Garantir que a etapa de Obras esteja presente
@@ -404,10 +409,7 @@ function updateKPIs() {
     if (barElem) barElem.style.width = `${avg}%`;
   };
 
-  calcDiscipline('Arquitetura', 'arq');
-  calcDiscipline('Estrutura', 'est');
-  calcDiscipline('Complementares', 'comp');
-  calcDiscipline('Obras', 'obr');
+  PHASE_MODEL.forEach(m => calcDiscipline(m.disciplina, m.key));
 
   // 3. Prazos Críticos (≤ 7 dias para vencer e status != 'Finalizado')
   const criticalTasks = tasks.filter(t => {
@@ -470,123 +472,146 @@ function getFilteredTasks() {
  * 7. RENDERIZAÇÃO DA VISÃO KANBAN
  */
 function renderKanban(filteredTasks) {
-  const colNaoIniciado = document.getElementById('list-nao-iniciado');
-  const colEmAndamento = document.getElementById('list-em-andamento');
-  const colFinalizado = document.getElementById('list-finalizado');
+  const colunas = [
+    { status: 'Não Iniciado', listId: 'list-nao-iniciado', countId: 'count-nao-iniciado' },
+    { status: 'Em Andamento', listId: 'list-em-andamento', countId: 'count-em-andamento' },
+    { status: 'Finalizado',   listId: 'list-finalizado',   countId: 'count-finalizado' }
+  ];
 
-  if (!colNaoIniciado || !colEmAndamento || !colFinalizado) return;
+  colunas.forEach(coluna => {
+    const lista = document.getElementById(coluna.listId);
+    if (!lista) return;
 
-  colNaoIniciado.innerHTML = '';
-  colEmAndamento.innerHTML = '';
-  colFinalizado.innerHTML = '';
+    lista.innerHTML = '';
 
-  let countNaoIniciado = 0;
-  let countEmAndamento = 0;
-  let countFinalizado = 0;
+    const tarefasDaColuna = filteredTasks.filter(t => calculateStatus(t.porcentagem) === coluna.status);
 
-  filteredTasks.forEach(task => {
-    const status = calculateStatus(task.porcentagem);
-    const days = getDaysRemaining(task.data_conclusao);
-    const isCritical = status !== 'Finalizado' && days <= 7;
-    const progressColor = getProgressColor(task.porcentagem);
+    const contador = document.getElementById(coluna.countId);
+    if (contador) contador.textContent = tarefasDaColuna.length;
 
-    // Mapeamento de classe da disciplina
-    let discBadgeClass = 'badge-arq';
-    if (task.disciplina_projeto === 'Estrutura') discBadgeClass = 'badge-est';
-    if (task.disciplina_projeto === 'Complementares') discBadgeClass = 'badge-comp';
-    if (task.disciplina_projeto === 'Obras') discBadgeClass = 'badge-obras';
+    if (tarefasDaColuna.length === 0) {
+      lista.innerHTML = '<div class="kanban-col-empty">Nenhuma etapa neste estágio</div>';
+      return;
+    }
 
-    // Criação do elemento Card
-    const card = document.createElement('div');
-    card.className = `kanban-card ${isCritical ? 'card-critical' : ''}`;
-    card.draggable = true;
-    card.dataset.taskId = task.id;
+    // Dentro de cada coluna as etapas ficam agrupadas por disciplina, na ordem
+    // do cronograma: Arquitetura, 3D, Estrutural, Complementares e Obra.
+    PHASE_MODEL.forEach(model => {
+      const doGrupo = tarefasDaColuna.filter(t => t.disciplina_projeto === model.disciplina);
+      if (doGrupo.length === 0) return;
 
-    // Drag events
-    card.addEventListener('dragstart', (e) => {
-      AppState.draggedTaskId = task.id;
-      card.classList.add('is-dragging');
-      e.dataTransfer.setData('text/plain', task.id);
-      e.dataTransfer.effectAllowed = 'move';
+      const media = averagePercent(doGrupo);
+
+      const grupo = document.createElement('div');
+      grupo.className = `kanban-group group-${model.key}`;
+      grupo.innerHTML = `
+        <div class="kanban-group-head">
+          <span class="kanban-group-icon"><i data-lucide="${model.icon}"></i></span>
+          <span class="kanban-group-name">${escapeHTML(model.nome)}</span>
+          <span class="kanban-group-count">${doGrupo.length}</span>
+          <span class="kanban-group-avg">${media}%</span>
+        </div>
+      `;
+
+      doGrupo.forEach(task => grupo.appendChild(buildKanbanCard(task)));
+      lista.appendChild(grupo);
     });
 
-    card.addEventListener('dragend', () => {
-      card.classList.remove('is-dragging');
-      AppState.draggedTaskId = null;
-    });
-
-    // Template HTML do Card
-    card.innerHTML = `
-      <div class="card-top-row">
-        <span class="badge-disciplina ${discBadgeClass}">${escapeHTML(task.disciplina_projeto)}</span>
-        ${isCritical ? `
-          <span class="card-alert-badge" title="Prazo crítico: ${days < 0 ? 'Vencida há ' + Math.abs(days) + ' dias' : 'Vence em ' + days + ' dias'}">
-            <i data-lucide="alert-circle"></i>
-            ${days < 0 ? 'Atrasada' : days + 'd'}
-          </span>
-        ` : ''}
-      </div>
-
-      <div class="card-title">${escapeHTML(task.descricao_etapa)}</div>
-
-      <div class="card-meta-row">
-        <div class="card-author" title="Responsável: ${escapeHTML(task.projetista)}">
-          <div class="author-avatar">${escapeHTML(task.projetista.charAt(0))}</div>
-          <span>${escapeHTML(task.projetista)}</span>
+    // Disciplinas fora do modelo (cadastradas manualmente) não podem sumir.
+    const conhecidas = PHASE_MODEL.map(m => m.disciplina);
+    const orfas = tarefasDaColuna.filter(t => !conhecidas.includes(t.disciplina_projeto));
+    if (orfas.length > 0) {
+      const grupo = document.createElement('div');
+      grupo.className = 'kanban-group group-outros';
+      grupo.innerHTML = `
+        <div class="kanban-group-head">
+          <span class="kanban-group-icon"><i data-lucide="folder"></i></span>
+          <span class="kanban-group-name">Outras disciplinas</span>
+          <span class="kanban-group-count">${orfas.length}</span>
+          <span class="kanban-group-avg">${averagePercent(orfas)}%</span>
         </div>
-        <div class="card-date" title="Data Limite de Entrega">
-          <i data-lucide="calendar"></i>
-          <span>${escapeHTML(task.data_conclusao)}</span>
-        </div>
-      </div>
-
-      <div class="card-progress-wrapper">
-        <div class="card-progress-header">
-          <span>Progresso</span>
-          <span style="color: ${progressColor}">${task.porcentagem}%</span>
-        </div>
-        <div class="custom-progress-track">
-          <div class="custom-progress-bar" style="width: ${task.porcentagem}%; background-color: ${progressColor};"></div>
-        </div>
-      </div>
-
-      <div class="card-footer-actions">
-        <button class="btn-card-action" onclick="quickEditPercent('${task.id}')" title="Ajustar Porcentagem">
-          <i data-lucide="percent"></i>
-        </button>
-        <button class="btn-card-action" onclick="openEditModal('${task.id}')" title="Editar Tarefa">
-          <i data-lucide="edit-3"></i>
-        </button>
-        <button class="btn-card-action danger" onclick="deleteTask('${task.id}')" title="Excluir Tarefa">
-          <i data-lucide="trash-2"></i>
-        </button>
-      </div>
-    `;
-
-    // Distribuição automática por Status
-    if (status === 'Não Iniciado') {
-      colNaoIniciado.appendChild(card);
-      countNaoIniciado++;
-    } else if (status === 'Em Andamento') {
-      colEmAndamento.appendChild(card);
-      countEmAndamento++;
-    } else if (status === 'Finalizado') {
-      colFinalizado.appendChild(card);
-      countFinalizado++;
+      `;
+      orfas.forEach(task => grupo.appendChild(buildKanbanCard(task)));
+      lista.appendChild(grupo);
     }
   });
+}
 
-  // Atualizar contadores das colunas
-  document.getElementById('count-nao-iniciado').textContent = countNaoIniciado;
-  document.getElementById('count-em-andamento').textContent = countEmAndamento;
-  document.getElementById('count-finalizado').textContent = countFinalizado;
+/**
+ * Monta o card de uma etapa, já com os eventos de arrastar-e-soltar.
+ */
+function buildKanbanCard(task) {
+  const status = calculateStatus(task.porcentagem);
+  const days = getDaysRemaining(task.data_conclusao);
+  const isCritical = status !== 'Finalizado' && days <= 7;
+  const progressColor = getProgressColor(task.porcentagem);
+  const discKey = getDisciplinaKey(task.disciplina_projeto);
 
-  // Placeholder vazio para colunas sem cards
-  [colNaoIniciado, colEmAndamento, colFinalizado].forEach(col => {
-    if (col.children.length === 0) {
-      col.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--text-muted); font-size: 0.8125rem;">Nenhuma tarefa nesta etapa</div>`;
-    }
+  const card = document.createElement('div');
+  card.className = `kanban-card ${isCritical ? 'card-critical' : ''}`;
+  card.draggable = true;
+  card.dataset.taskId = task.id;
+
+  card.addEventListener('dragstart', (e) => {
+    AppState.draggedTaskId = task.id;
+    card.classList.add('is-dragging');
+    e.dataTransfer.setData('text/plain', task.id);
+    e.dataTransfer.effectAllowed = 'move';
   });
+
+  card.addEventListener('dragend', () => {
+    card.classList.remove('is-dragging');
+    AppState.draggedTaskId = null;
+  });
+
+  card.innerHTML = `
+    <div class="card-top-row">
+      <span class="badge-disciplina badge-${discKey}">${escapeHTML(task.disciplina_projeto)}</span>
+      ${isCritical ? `
+        <span class="card-alert-badge" title="Prazo crítico: ${days < 0 ? 'Vencida há ' + Math.abs(days) + ' dias' : 'Vence em ' + days + ' dias'}">
+          <i data-lucide="alert-circle"></i>
+          ${days < 0 ? 'Atrasada' : days + 'd'}
+        </span>
+      ` : ''}
+    </div>
+
+    <div class="card-title">${escapeHTML(task.descricao_etapa)}</div>
+
+    <div class="card-meta-row">
+      <div class="card-author" title="Responsável: ${escapeHTML(task.projetista)}">
+        <div class="author-avatar">${escapeHTML(task.projetista.charAt(0))}</div>
+        <span>${escapeHTML(task.projetista)}</span>
+      </div>
+      <div class="card-date" title="Data Limite de Entrega">
+        <i data-lucide="calendar"></i>
+        <span>${escapeHTML(task.data_conclusao)}</span>
+      </div>
+    </div>
+
+    <div class="card-progress-wrapper">
+      <div class="card-progress-header">
+        <span>Progresso</span>
+        <span style="color: ${progressColor}">${task.porcentagem}%</span>
+      </div>
+      <div class="custom-progress-track">
+        <div class="custom-progress-bar" style="width: ${task.porcentagem}%; background-color: ${progressColor};"></div>
+      </div>
+    </div>
+
+    <div class="card-footer-actions">
+      <button class="btn-card-action" onclick="quickEditPercent('${task.id}')" title="Ajustar Porcentagem">
+        <i data-lucide="percent"></i>
+      </button>
+      <button class="btn-card-action" onclick="openEditModal('${task.id}')" title="Editar Tarefa">
+        <i data-lucide="edit-3"></i>
+      </button>
+      <button class="btn-card-action danger" onclick="deleteTask('${task.id}')" title="Excluir Tarefa">
+        <i data-lucide="trash-2"></i>
+      </button>
+    </div>
+  `;
+
+  return card;
 }
 
 /**
@@ -621,10 +646,7 @@ function renderDataGrid(filteredTasks) {
     if (status === 'Finalizado') statusClass = 'status-finalizado';
 
     // Mapeamento de classe da disciplina
-    let discBadgeClass = 'badge-arq';
-    if (task.disciplina_projeto === 'Estrutura') discBadgeClass = 'badge-est';
-    if (task.disciplina_projeto === 'Complementares') discBadgeClass = 'badge-comp';
-    if (task.disciplina_projeto === 'Obras') discBadgeClass = 'badge-obras';
+    const discBadgeClass = 'badge-' + getDisciplinaKey(task.disciplina_projeto);
 
     const tr = document.createElement('tr');
     tr.className = isCritical ? 'row-critical' : '';
@@ -774,6 +796,11 @@ function renderApp() {
     renderDataGrid(filtered);
   }
 
+  // Painel de leitura do cliente: fases, equipe técnica e resumos do Kanban
+  if (typeof renderPainelCliente === 'function') {
+    renderPainelCliente(filtered);
+  }
+
   // Reinicializa ícones Lucide
   if (window.lucide) {
     lucide.createIcons();
@@ -798,7 +825,7 @@ function updateTaskProperty(taskId, updates) {
 function saveTaskFromModal(e) {
   e.preventDefault();
 
-  const id = document.getElementById('task-id').value;
+  const id = document.getElementById('form-task-id').value;
   const descricao = document.getElementById('form-descricao').value.trim();
   const disciplina = document.getElementById('form-disciplina').value;
   const projetista = document.getElementById('form-projetista').value;
@@ -929,7 +956,7 @@ function setupKanbanDropZones() {
 function openNewTaskModal() {
   document.getElementById('modal-title').textContent = 'Nova Tarefa de Projeto';
   document.getElementById('task-form').reset();
-  document.getElementById('task-id').value = '';
+  document.getElementById('form-task-id').value = '';
   document.getElementById('form-data').value = '15-08-2026';
   syncModalPercent(0);
 
@@ -943,7 +970,7 @@ window.openEditModal = function(taskId) {
   if (!task) return;
 
   document.getElementById('modal-title').textContent = 'Editar Tarefa de Projeto';
-  document.getElementById('task-id').value = task.id;
+  document.getElementById('form-task-id').value = task.id;
   document.getElementById('form-descricao').value = task.descricao_etapa;
   document.getElementById('form-disciplina').value = task.disciplina_projeto;
   document.getElementById('form-projetista').value = task.projetista;
@@ -1346,6 +1373,11 @@ function closeReportModal() {
 }
 
 function populateReportData() {
+  // Fase atual e parecer técnico, ambos calculados a partir das etapas reais
+  if (typeof renderRelatorioCliente === 'function') {
+    renderRelatorioCliente();
+  }
+
   const tasks = AppState.tasks;
   const totalTasks = tasks.length;
   const p = AppState.projectInfo;
@@ -1432,10 +1464,7 @@ function populateReportData() {
     if (subElem) subElem.textContent = `${done}/${count} concluídas`;
   };
 
-  calcDiscReport('Arquitetura', 'arq');
-  calcDiscReport('Estrutura', 'est');
-  calcDiscReport('Complementares', 'comp');
-  calcDiscReport('Obras', 'obr');
+  PHASE_MODEL.forEach(m => calcDiscReport(m.disciplina, m.key));
 
   // Mini Stats
   const statTotal = document.getElementById('stat-total-tasks');
@@ -1481,10 +1510,7 @@ function populateReportData() {
     const isCritical = status !== 'Finalizado' && days <= 7;
     const progressColor = getProgressColor(task.porcentagem);
 
-    let discClass = 'disc-arq-badge';
-    if (task.disciplina_projeto === 'Estrutura') discClass = 'disc-est-badge';
-    if (task.disciplina_projeto === 'Complementares') discClass = 'disc-comp-badge';
-    if (task.disciplina_projeto === 'Obras') discClass = 'disc-obras-badge';
+    const discClass = 'disc-' + getDisciplinaKey(task.disciplina_projeto) + '-badge';
 
     let statusStyle = 'background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;';
     if (status === 'Finalizado') {
@@ -1526,12 +1552,23 @@ function downloadPDFReport() {
 
   showToast('Gerando arquivo PDF...');
 
+  // Nome do arquivo carrega a obra e a data — o cliente costuma acumular versões.
+  const slugObra = (AppState.projectInfo?.nomeObra || 'Obra')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+
   const opt = {
     margin: [8, 8, 8, 8],
-    filename: `Relatorio_Cronograma_ArqVertice_${new Date().toISOString().slice(0, 10)}.pdf`,
+    filename: `Cronograma_${slugObra}_${new Date().toISOString().slice(0, 10)}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    // Evita que uma seção, uma linha da tabela ou o bloco de assinaturas
+    // sejam cortados ao meio na virada de página.
+    pagebreak: {
+      mode: ['css', 'legacy'],
+      avoid: ['.report-section-block', '.report-kpi-box', 'tr', '.signatures-wrapper']
+    }
   };
 
   if (window.html2pdf) {

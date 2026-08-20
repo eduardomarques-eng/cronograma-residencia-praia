@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cronograma ArqVértice | Gestão Multidisciplinar</title>
-  <meta name="description" content="Sistema de Gerenciamento e Controle de Cronograma ArqVértice para Projetos Multidisciplinares de Arquitetura, Estrutura e Complementares.">
+  <meta name="description" content="Cronograma ArqVértice: acompanhamento de projetos e obra por fase — Arquitetura, 3D, Estrutural, Complementares e Execução, com relatório executivo em PDF para o cliente.">
   
   <!-- Fontes Google: Montserrat e JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -149,53 +149,40 @@
           </div>
         </div>
 
-        <!-- Coluna 2: Equipe Técnica e Responsabilidades -->
-        <div class="master-team-block">
-          <div class="team-block-title">
-            <i data-lucide="users"></i>
-            <span>RESPONSÁVEIS TÉCNICOS & ESCOPOS DE EXECUÇÃO</span>
-          </div>
-          
-          <div class="master-executores-grid">
-            <!-- 1. Erick Santiago -->
-            <div class="master-executor-item disc-obr-border">
-              <div class="master-exec-header">
-                <div class="exec-avatar avatar-erick">ES</div>
-                <div class="exec-names">
-                  <span class="exec-title">Erick Santiago</span>
-                  <span class="exec-subtitle">Engenheiro de Obra</span>
-                </div>
-              </div>
-              <p class="exec-desc"><strong>Atribuição:</strong> Responsável pela Execução de Obra, Canteiro e Acompanhamento de Campo.</p>
-            </div>
+      </div>
 
-            <!-- 2. Luan Almeida -->
-            <div class="master-executor-item disc-est-border">
-              <div class="master-exec-header">
-                <div class="exec-avatar avatar-luan">LA</div>
-                <div class="exec-names">
-                  <span class="exec-title">Luan Almeida</span>
-                  <span class="exec-subtitle">Engenheiro Calculista</span>
-                </div>
-              </div>
-              <p class="exec-desc"><strong>Atribuição:</strong> Responsável pelo Projeto Estrutural (Fundações, Formas e Armaduras).</p>
-            </div>
-
-            <!-- 3. Eduardo Marques -->
-            <div class="master-executor-item disc-arq-border">
-              <div class="master-exec-header">
-                <div class="exec-avatar avatar-eduardo">EM</div>
-                <div class="exec-names">
-                  <span class="exec-title">Eduardo Marques</span>
-                  <span class="exec-subtitle">Arquiteto Projetista</span>
-                </div>
-              </div>
-              <p class="exec-desc"><strong>Atribuição:</strong> Responsável por Arquitetura, 3D/Render e Complementares (Elétrico/Hidro).</p>
-            </div>
-          </div>
+      <!-- Equipe Técnica: logo abaixo dos dados da obra, com a carga real de cada profissional -->
+      <div class="master-team-block">
+        <div class="team-block-title">
+          <i data-lucide="users"></i>
+          <span>RESPONSÁVEIS TÉCNICOS POR PROJETO</span>
+          <span class="team-block-hint">Cada profissional e o avanço das entregas sob sua responsabilidade</span>
         </div>
+
+        <!-- Cards renderizados por painel-cliente.js a partir das tarefas -->
+        <div class="master-executores-grid" id="team-grid"></div>
       </div>
     </header>
+
+    <!-- FAIXA DE FASE ATUAL: onde o empreendimento está agora -->
+    <section class="fase-section" id="fase-section">
+      <div class="fase-head">
+        <div class="fase-head-title">
+          <i data-lucide="milestone"></i>
+          <div>
+            <h2>Fase Atual do Empreendimento</h2>
+            <p>Do estudo preliminar à execução em canteiro — o ponto exato em que o projeto se encontra hoje</p>
+          </div>
+        </div>
+        <div class="fase-now-tag" id="fase-now-tag"></div>
+      </div>
+
+      <!-- Trilha das 4 fases macro, renderizada por painel-cliente.js -->
+      <div class="fase-track" id="fase-track"></div>
+
+      <!-- Em execução agora, próximas entregas e resumo executivo -->
+      <div class="fase-detail" id="fase-detail"></div>
+    </section>
 
     <!-- DASHBOARD DE KPIS E PROGRESSO -->
     <section class="kpi-section">
@@ -232,6 +219,26 @@
           </div>
           <div class="progress-bar-container">
             <div id="kpi-arq-progress-bar" class="progress-bar-fill bg-arquitetura" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Projeto 3D -->
+      <div class="kpi-card discipline-card disc-3d">
+        <div class="kpi-header">
+          <div class="disc-title-wrapper">
+            <span class="disc-indicator bg-3d"></span>
+            <span class="kpi-label">Projeto 3D</span>
+          </div>
+          <span class="responsavel-tag" title="Arquiteto Projetista">Eduardo Marques</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-value-container">
+            <span id="kpi-3d-percent" class="kpi-number">0%</span>
+            <span class="kpi-sub" id="kpi-3d-count">0 tarefas</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="kpi-3d-progress-bar" class="progress-bar-fill bg-3d" style="width: 0%;"></div>
           </div>
         </div>
       </div>
@@ -350,7 +357,8 @@
             <select id="filter-disciplina" class="select-input">
               <option value="all">Todas as Disciplinas</option>
               <option value="Arquitetura">Arquitetura</option>
-              <option value="Estrutura">Estrutura</option>
+              <option value="3D">Projeto 3D</option>
+              <option value="Estrutura">Projeto Estrutural</option>
               <option value="Complementares">Complementares</option>
               <option value="Obras">Execução de Obras</option>
             </select>
@@ -441,6 +449,7 @@
               </div>
               <span class="col-tag">0%</span>
             </div>
+            <div class="kanban-col-summary" id="summary-nao-iniciado"></div>
             <div class="kanban-cards-list" id="list-nao-iniciado">
               <!-- Cards injetados via JS -->
             </div>
@@ -456,6 +465,7 @@
               </div>
               <span class="col-tag">1% a 99%</span>
             </div>
+            <div class="kanban-col-summary" id="summary-em-andamento"></div>
             <div class="kanban-cards-list" id="list-em-andamento">
               <!-- Cards injetados via JS -->
             </div>
@@ -471,6 +481,7 @@
               </div>
               <span class="col-tag">100%</span>
             </div>
+            <div class="kanban-col-summary" id="summary-finalizado"></div>
             <div class="kanban-cards-list" id="list-finalizado">
               <!-- Cards injetados via JS -->
             </div>
@@ -647,9 +658,10 @@
               <label for="form-disciplina" class="form-label required">Disciplina do Projeto</label>
               <select id="form-disciplina" class="form-select" required>
                 <option value="Arquitetura">Arquitetura</option>
-                <option value="Estrutura">Estrutura</option>
+                <option value="3D">Projeto 3D</option>
+                <option value="Estrutura">Projeto Estrutural</option>
                 <option value="Complementares">Complementares</option>
-                <option value="Obras">Obras</option>
+                <option value="Obras">Execução de Obras</option>
               </select>
             </div>
 
@@ -818,37 +830,36 @@
                   <span style="color: #334155; font-size: 0.7rem; font-weight: 600; display: block; margin-top: 2px;">Engenheiro Calculista • Fundações, Formas e Armaduras</span>
                 </div>
                 <div style="border-left: 4px solid #4338ca; padding-left: 10px;">
-                  <strong style="color: #4338ca; display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 800;">📐 Arquitetura & Complementares</strong>
+                  <strong style="color: #4338ca; display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 800;">📐 Arquitetura, 3D & Complementares</strong>
                   <span style="font-weight: 900; color: #020617; font-size: 0.85rem; display: block;">Eduardo Marques</span>
-                  <span style="color: #334155; font-size: 0.7rem; font-weight: 600; display: block; margin-top: 2px;">Arquiteto Projetista • 3D, Elétrico e Hidrossanitário</span>
+                  <span style="color: #334155; font-size: 0.7rem; font-weight: 600; display: block; margin-top: 2px;">Arquiteto Projetista • Projeto Executivo, Modelagem/Render 3D, Elétrico e Hidrossanitário</span>
                 </div>
               </div>
             </div>
 
-            <!-- 4. PARECER TÉCNICO EXPLICATIVO PARA O CLIENTE -->
+            <!-- 3. FASE ATUAL DO EMPREENDIMENTO (gerado por painel-cliente.js) -->
             <div class="report-section-block" style="margin-bottom: 16px;">
               <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
-                3. PARECER TÉCNICO EXECUTIVO DO CRONOGRAMA
+                3. FASE ATUAL DO EMPREENDIMENTO
               </h3>
-              <div style="background: #ffffff; border: 1.5px solid #0f172a; border-left: 6px solid #0f172a; border-radius: 8px; padding: 12px 16px; font-size: 0.78rem; color: #020617; line-height: 1.6; font-weight: 500;">
-                <p style="margin: 0 0 8px 0; color: #020617;">
-                  Prezado cliente <strong style="color: #020617;">Pedro</strong>, o presente relatório consolida o acompanhamento físico de projetos e planejamento executivo da sua <strong style="color: #020617;">Residência de Praia</strong>.
-                </p>
-                <div style="color: #0f172a; display: flex; flex-direction: column; gap: 4px;">
-                  <div>• <strong style="color: #14532d;">Etapas Concluídas (100%):</strong> Estudo Preliminar e Projeto Básico de Arquitetura, além do Projeto Pré-Formas de Estrutura.</div>
-                  <div>• <strong style="color: #1e3a8a;">Etapas em Desenvolvimento Ativo:</strong> Projeto de Formas Finais (90%), Modelagem 3D (30%), Projeto de Armaduras (30%), Projeto de Fundação (10%) e Projeto Executivo de Arquitetura (20%).</div>
-                  <div>• <strong style="color: #c2410c;">Próximas Fases Programadas:</strong> Renderizações 3D em alta resolução, Projetos Complementares (Instalações Elétricas e Hidrossanitárias) e Mobilização para Execução de Obra.</div>
-                </div>
-              </div>
+              <div id="report-fase-track" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;"></div>
+            </div>
+
+            <!-- 4. PARECER TÉCNICO EXPLICATIVO PARA O CLIENTE (calculado a partir das etapas) -->
+            <div class="report-section-block" style="margin-bottom: 16px;">
+              <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
+                4. PARECER TÉCNICO EXECUTIVO DO CRONOGRAMA
+              </h3>
+              <div id="report-parecer" style="background: #ffffff; border: 1.5px solid #0f172a; border-left: 6px solid #0f172a; border-radius: 8px; padding: 12px 16px; font-size: 0.78rem; color: #020617; line-height: 1.6; font-weight: 500;"></div>
             </div>
 
             <!-- 5. RESUMO DE INDICADORES DE DESEMPENHO (KPIS) -->
             <div class="report-section-block" style="margin-bottom: 16px;">
               <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
-                4. RESUMO DE AVANÇO FÍSICO POR DISCIPLINA
+                5. RESUMO DE AVANÇO FÍSICO POR DISCIPLINA
               </h3>
               
-              <div class="report-kpi-grid" style="display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 10px;">
+              <div class="report-kpi-grid" style="display: grid; grid-template-columns: 1.2fr repeat(5, 1fr); gap: 8px;">
                 <!-- Progresso Geral -->
                 <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #0f172a; color: #020617; padding: 10px 12px; border-radius: 8px;">
                   <span class="report-kpi-label" style="color: #0f172a; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">Progresso Geral</span>
@@ -870,6 +881,19 @@
                     <div class="report-progress-bar bg-arq" id="report-kpi-arq-bar" style="width: 50%; background: #6d28d9; height: 100%;"></div>
                   </div>
                   <span class="report-kpi-sub" id="report-kpi-arq-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">2/5 finalizadas</span>
+                </div>
+
+                <!-- Projeto 3D -->
+                <div class="report-kpi-box" style="background: #ffffff; border: 2px solid #be185d; padding: 10px 12px; border-radius: 8px;">
+                  <div class="report-kpi-header-row" style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800;">
+                    <span class="report-kpi-label" style="color: #9d174d;">Projeto 3D</span>
+                    <span class="report-kpi-author" style="color: #0f172a; font-size: 0.625rem; background: #fce7f3; padding: 1px 5px; border-radius: 3px;">Eduardo</span>
+                  </div>
+                  <div class="report-kpi-val text-3d" id="report-kpi-3d-val" style="font-size: 1.3rem; font-weight: 900; color: #9d174d; margin: 4px 0;">0%</div>
+                  <div class="report-progress-track" style="background: #e2e8f0; height: 7px; border-radius: 4px; overflow: hidden;">
+                    <div class="report-progress-bar bg-3d" id="report-kpi-3d-bar" style="width: 0%; background: #9d174d; height: 100%;"></div>
+                  </div>
+                  <span class="report-kpi-sub" id="report-kpi-3d-sub" style="color: #334155; font-size: 0.7rem; font-weight: 700; margin-top: 4px; display: block;">0/2 finalizadas</span>
                 </div>
 
                 <!-- Estrutura -->
@@ -916,7 +940,7 @@
             <!-- 6. QUADRO DETALHADO DE ENTREGAS TÉCNICAS COM ALTO CONTRASTE -->
             <div class="report-section-block" style="margin-bottom: 16px;">
               <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
-                5. QUADRO CONSOLIDADO DE ETAPAS & ENTREGAS
+                6. QUADRO CONSOLIDADO DE ETAPAS & ENTREGAS
               </h3>
 
               <table class="report-table" style="width: 100%; border-collapse: collapse; font-size: 0.75rem; color: #020617; border: 1.5px solid #0f172a;">
@@ -990,6 +1014,7 @@
   </div>
 
   <!-- Scripts da Aplicação -->
+  <script src="painel-cliente.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
