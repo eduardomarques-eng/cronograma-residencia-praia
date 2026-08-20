@@ -4,6 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Briefing ArqVértice | Entrevista de Projeto</title>
+
+  <!-- Fixa a base das URLs no diretório desta página.
+       Servida como /briefing (sem barra final), um caminho relativo como
+       "briefing.js" resolveria na raiz do site e traria o CSS do Cronograma.
+       Roda antes de qualquer <link>/<script>, então o parser já usa a base certa. -->
+  <base href="./">
+  <script>
+    (function () {
+      var p = location.pathname;
+      if (!/\/$/.test(p)) {
+        p = /\.html?$/i.test(p) ? p.slice(0, p.lastIndexOf('/') + 1) : p + '/';
+      }
+      document.getElementsByTagName('base')[0].setAttribute('href', p);
+    })();
+  </script>
   <meta name="description" content="Roteiro de briefing da ArqVértice: entrevista guiada com o cliente para levantar perfil, terreno, programa de necessidades, estilo, iluminação, orçamento e prazos.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
