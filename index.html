@@ -25,7 +25,7 @@
     
     <!-- MASTER CABEÇALHO EXECUTIVO DA APLICAÇÃO -->
     <header class="app-master-header">
-      <!-- Linha Superior: Logo Ampliada, Identidade Institucional e Resumo de Qualidade -->
+      <!-- Linha Superior: Logo Oficial, Identidade Institucional e Ações Principais -->
       <div class="master-top-bar">
         <div class="master-brand-wrap">
           <div class="logo-badge-arqvertice">
@@ -34,13 +34,13 @@
           <div class="master-brand-text">
             <div class="project-tag">
               <span class="pulse-dot"></span>
-              ARQVÉRTICE • ENGENHARIA, ARQUITETURA & GESTÃO DE OBRAS
+              ARQVÉRTICE • ARQUITETURA, ESTRUTURA & GESTÃO DE OBRAS
             </div>
             <h1 class="project-title">Cronograma ArqVértice</h1>
-            <p class="project-subtitle">Sistema Integrado de Controle de Prazos, Entregas e Execução</p>
+            <p class="project-subtitle">Sistema Integrado de Planejamento, Prazos e Execução Técnica</p>
             <div class="brand-quality-summary">
               <i data-lucide="award"></i>
-              <span>Projetos e obras desenvolvidos com <strong>máximo rigor técnico, organização e padrão de excelência</strong> do canteiro à entrega final.</span>
+              <span>Projetos e obras desenvolvidos com <strong>máximo rigor técnico, organização e excelência</strong> do canteiro à entrega final.</span>
             </div>
           </div>
         </div>
@@ -51,14 +51,9 @@
             <i data-lucide="moon" class="moon-icon"></i>
           </button>
 
-          <button id="btn-new-project" class="btn btn-secondary btn-new-proj-btn" title="Limpar dados cadastrais para iniciar um novo projeto do zero">
-            <i data-lucide="file-plus-2"></i>
-            <span>Novo Projeto</span>
-          </button>
-
-          <button id="btn-sample-project" class="btn btn-secondary" title="Preencher com os dados do exemplo (Residência de Praia - Pedro)">
-            <i data-lucide="sparkles"></i>
-            <span>Carregar Exemplo</span>
+          <button id="btn-edit-project" class="btn btn-secondary" title="Editar Ficha Técnica e Dados de Entrada da Obra">
+            <i data-lucide="settings-2"></i>
+            <span>Dados da Obra</span>
           </button>
 
           <button id="btn-open-report" class="btn btn-report" title="Gerar e Exportar Relatório Executivo em PDF para o Cliente">
@@ -68,7 +63,7 @@
 
           <button id="btn-reset-seed" class="btn btn-secondary" title="Restaurar tarefas padrão">
             <i data-lucide="rotate-ccw"></i>
-            <span>Restaurar Tarefas</span>
+            <span>Restaurar Padrão</span>
           </button>
 
           <button id="btn-export-json" class="btn btn-secondary" title="Exportar dados em JSON">
@@ -85,94 +80,71 @@
 
       <!-- Ficha Técnica Consolidada: Dados da Obra, Cliente, Local, Cadastrais e Equipe Técnica -->
       <div class="master-info-card">
-        <!-- Coluna 1: Dados de Entrada da Obra e Cliente (Campos Interativos / Editáveis) -->
+        <!-- Coluna 1: Dossiê Técnico e Dados Cadastrais da Obra -->
         <div class="master-obra-details">
           <div class="obra-header-quick-bar">
             <div class="obra-badge-row">
-              <span class="badge-obra-type"><i data-lucide="building-2"></i> DADOS DE ENTRADA DO PROJETO</span>
+              <span class="badge-obra-type"><i data-lucide="building-2"></i> <span id="header-tipologia-badge">RESIDENCIAL UNIFAMILIAR</span></span>
               <span class="badge-obra-status"><i data-lucide="activity"></i> EM ANDAMENTO</span>
             </div>
-            <div class="quick-status-msg" id="header-save-indicator">
-              <i data-lucide="check-circle-2"></i> Auto-salvo
-            </div>
+            <button id="btn-quick-edit-project" class="btn-quick-edit" title="Editar dados cadastrais da obra">
+              <i data-lucide="edit-3"></i> <span>Editar Dados</span>
+            </button>
           </div>
 
-          <!-- Nome da Obra -->
-          <div class="obra-title-field-group">
-            <label for="header-input-nome" class="field-entry-label">
-              <i data-lucide="home"></i> Nome da Obra / Empreendimento:
-            </label>
-            <input type="text" id="header-input-nome" class="header-main-title-input" placeholder="Digite o Nome da Obra (ex: Residência de Praia)..." value="Residência de Praia">
+          <!-- Nome da Obra e Cliente -->
+          <div class="obra-title-display-wrap">
+            <h2 class="master-obra-name" id="header-obra-name">Residência de Praia</h2>
+            <div class="master-obra-cliente-row">
+              <span class="cliente-tag-label"><i data-lucide="user"></i> Cliente / Contratante:</span>
+              <strong class="cliente-tag-val" id="header-cliente-val">Pedro</strong>
+            </div>
           </div>
           
-          <!-- Grid de Campos de Entrada Cadastrais / Urbanísticos -->
+          <!-- Grid Organizado de Especificações Técnicas e Cadastrais -->
           <div class="obra-data-grid">
-            <!-- 1. Cliente / Contratante -->
+            <!-- 1. Localização -->
             <div class="obra-data-item">
-              <label for="header-input-cliente" class="data-label">
-                <i data-lucide="user"></i> Cliente / Contratante:
-              </label>
-              <input type="text" id="header-input-cliente" class="header-inline-input" placeholder="Nome do Cliente (ex: Pedro)..." value="Pedro">
+              <span class="data-label"><i data-lucide="map-pin"></i> Localização da Obra:</span>
+              <span class="data-val" id="header-local-val">Loteamento Praia Bela, Litoral Sul</span>
             </div>
 
-            <!-- 2. Localização da Obra -->
+            <!-- 2. Identificação Cadastral -->
             <div class="obra-data-item">
-              <label for="header-input-local" class="data-label">
-                <i data-lucide="map-pin"></i> Localização da Obra:
-              </label>
-              <input type="text" id="header-input-local" class="header-inline-input" placeholder="Ex: Loteamento Praia Bela, Litoral Sul..." value="Loteamento Praia Bela, Litoral Sul">
+              <span class="data-label"><i data-lucide="layers"></i> Identificação Cadastral:</span>
+              <span class="data-val" id="header-lotequadra-val">Lote 14, Quadra B</span>
             </div>
 
-            <!-- 3. Identificação Cadastral -->
+            <!-- 3. Zoneamento -->
             <div class="obra-data-item">
-              <label for="header-input-lotequadra" class="data-label">
-                <i data-lucide="layers"></i> Identificação Cadastral:
-              </label>
-              <input type="text" id="header-input-lotequadra" class="header-inline-input" placeholder="Ex: Lote 14, Quadra B..." value="Lote 14, Quadra B">
+              <span class="data-label"><i data-lucide="map"></i> Zoneamento:</span>
+              <span class="data-val" id="header-zona-val">Zona Residencial (ZR-1)</span>
             </div>
 
-            <!-- 4. Zoneamento -->
+            <!-- 4. Tipologia -->
             <div class="obra-data-item">
-              <label for="header-input-zona" class="data-label">
-                <i data-lucide="map"></i> Zoneamento:
-              </label>
-              <input type="text" id="header-input-zona" class="header-inline-input" placeholder="Ex: Zona Residencial (ZR-1)..." value="Zona Residencial Litorânea (ZR-1)">
+              <span class="data-label"><i data-lucide="building"></i> Tipologia:</span>
+              <span class="data-val" id="header-tipologia-val">Residencial Unifamiliar (2 Pavimentos)</span>
             </div>
 
-            <!-- 5. Tipologia da Edificação -->
+            <!-- 5. Área Construída -->
             <div class="obra-data-item">
-              <label for="header-input-tipologia" class="data-label">
-                <i data-lucide="building"></i> Tipologia da Edificação:
-              </label>
-              <input type="text" id="header-input-tipologia" class="header-inline-input" placeholder="Ex: Residencial Unifamiliar (2 Pavimentos)..." value="Residencial Unifamiliar (2 Pavimentos)">
+              <span class="data-label"><i data-lucide="maximize-2"></i> Área Construída:</span>
+              <span class="data-val" id="header-areaconst-val">385,00 m²</span>
             </div>
 
-            <!-- 6. Área Construída -->
+            <!-- 6. Área do Lote -->
             <div class="obra-data-item">
-              <label for="header-input-areaconst" class="data-label">
-                <i data-lucide="maximize-2"></i> Área Construída:
-              </label>
-              <input type="text" id="header-input-areaconst" class="header-inline-input" placeholder="Ex: 385,00 m²..." value="385,00 m²">
+              <span class="data-label"><i data-lucide="box"></i> Área do Lote / Terreno:</span>
+              <span class="data-val" id="header-areaterreno-val">450,00 m² (15m x 30m)</span>
             </div>
 
-            <!-- 7. Área do Lote / Terreno -->
-            <div class="obra-data-item">
-              <label for="header-input-areaterreno" class="data-label">
-                <i data-lucide="box"></i> Área do Lote / Terreno:
-              </label>
-              <input type="text" id="header-input-areaterreno" class="header-inline-input" placeholder="Ex: 450,00 m² (15m x 30m)..." value="450,00 m² (15m x 30m)">
-            </div>
-
-            <!-- 8. Início da Obra & Previsão -->
-            <div class="obra-data-item">
-              <label for="header-input-inicio" class="data-label">
-                <i data-lucide="calendar-play"></i> Início & Previsão de Conclusão:
-              </label>
-              <div class="dates-inline-wrapper">
-                <input type="text" id="header-input-inicio" class="header-inline-input input-date-part" placeholder="Início (DD-MM-AAAA)" value="12-06-2026">
-                <span class="date-sep">a</span>
-                <input type="text" id="header-input-fim" class="header-inline-input input-date-part" placeholder="Previsão (DD-MM-AAAA)" value="30-11-2026">
-              </div>
+            <!-- 7. Prazos do Cronograma -->
+            <div class="obra-data-item span-two-cols">
+              <span class="data-label"><i data-lucide="calendar-play"></i> Prazo & Cronograma Geral:</span>
+              <span class="data-val highlight-date">
+                <span id="header-inicio-val">12-06-2026</span> até <span id="header-fim-val">30-11-2026</span>
+              </span>
             </div>
           </div>
         </div>
@@ -620,12 +592,22 @@
             </div>
           </div>
 
-          <div class="modal-actions">
-            <button type="button" id="btn-cancel-project-modal" class="btn btn-secondary">Cancelar</button>
-            <button type="submit" class="btn btn-primary">
-              <i data-lucide="save"></i>
-              <span>Salvar Dados da Obra</span>
-            </button>
+          <div class="modal-actions" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btn-modal-new-project" class="btn btn-secondary" title="Limpar todos os campos para cadastrar nova obra do zero">
+                <i data-lucide="file-plus-2"></i> <span>Novo (Limpar)</span>
+              </button>
+              <button type="button" id="btn-modal-sample-project" class="btn btn-secondary" title="Preencher com os dados do exemplo (Residência de Praia)">
+                <i data-lucide="sparkles"></i> <span>Exemplo</span>
+              </button>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btn-cancel-project-modal" class="btn btn-secondary">Cancelar</button>
+              <button type="submit" class="btn btn-primary">
+                <i data-lucide="save"></i>
+                <span>Salvar Dados da Obra</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>

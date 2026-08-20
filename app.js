@@ -283,36 +283,38 @@ function saveProjectInfo() {
 function renderProjectInfo() {
   const p = AppState.projectInfo || {};
   
-  // Atualizar inputs diretos do cabeçalho
-  const inpNome = document.getElementById('header-input-nome');
-  if (inpNome && inpNome !== document.activeElement) inpNome.value = p.nomeObra || '';
+  const elObraName = document.getElementById('header-obra-name');
+  if (elObraName) elObraName.textContent = p.nomeObra || 'Nova Obra';
+  
+  const elCliente = document.getElementById('header-cliente-val');
+  if (elCliente) elCliente.textContent = p.cliente || 'Não informado';
 
-  const inpCliente = document.getElementById('header-input-cliente');
-  if (inpCliente && inpCliente !== document.activeElement) inpCliente.value = p.cliente || '';
+  const elLocal = document.getElementById('header-local-val');
+  if (elLocal) elLocal.textContent = p.localizacao || 'Não informado';
 
-  const inpLocal = document.getElementById('header-input-local');
-  if (inpLocal && inpLocal !== document.activeElement) inpLocal.value = p.localizacao || '';
+  const elLoteQuadra = document.getElementById('header-lotequadra-val');
+  if (elLoteQuadra) elLoteQuadra.textContent = p.loteQuadra || 'Não informado';
 
-  const inpLote = document.getElementById('header-input-lotequadra');
-  if (inpLote && inpLote !== document.activeElement) inpLote.value = p.loteQuadra || '';
+  const elZona = document.getElementById('header-zona-val');
+  if (elZona) elZona.textContent = p.zona || 'Não informado';
 
-  const inpZona = document.getElementById('header-input-zona');
-  if (inpZona && inpZona !== document.activeElement) inpZona.value = p.zona || '';
+  const elTipologia = document.getElementById('header-tipologia-val');
+  if (elTipologia) elTipologia.textContent = p.tipologia || 'Residencial';
 
-  const inpTipologia = document.getElementById('header-input-tipologia');
-  if (inpTipologia && inpTipologia !== document.activeElement) inpTipologia.value = p.tipologia || '';
+  const elTipologiaBadge = document.getElementById('header-tipologia-badge');
+  if (elTipologiaBadge) elTipologiaBadge.textContent = (p.tipologia || 'Edificação Residencial').toUpperCase();
 
-  const inpAreaConst = document.getElementById('header-input-areaconst');
-  if (inpAreaConst && inpAreaConst !== document.activeElement) inpAreaConst.value = p.areaConstruida || '';
+  const elAreaConst = document.getElementById('header-areaconst-val');
+  if (elAreaConst) elAreaConst.textContent = p.areaConstruida || '-';
 
-  const inpAreaTerreno = document.getElementById('header-input-areaterreno');
-  if (inpAreaTerreno && inpAreaTerreno !== document.activeElement) inpAreaTerreno.value = p.areaTerreno || '';
+  const elAreaTerreno = document.getElementById('header-areaterreno-val');
+  if (elAreaTerreno) elAreaTerreno.textContent = p.areaTerreno || '-';
 
-  const inpInicio = document.getElementById('header-input-inicio');
-  if (inpInicio && inpInicio !== document.activeElement) inpInicio.value = p.dataInicio || '';
+  const elInicio = document.getElementById('header-inicio-val');
+  if (elInicio) elInicio.textContent = p.dataInicio || 'DD-MM-AAAA';
 
-  const inpFim = document.getElementById('header-input-fim');
-  if (inpFim && inpFim !== document.activeElement) inpFim.value = p.previsaoConclusao || '';
+  const elFim = document.getElementById('header-fim-val');
+  if (elFim) elFim.textContent = p.previsaoConclusao || 'DD-MM-AAAA';
 }
 
 function loadTasks() {
@@ -1170,63 +1172,56 @@ function initEventListeners() {
     });
   }
 
-  // 7. Inputs Diretos no Cabeçalho da Aplicação (Auto-save em tempo real)
-  const bindHeaderInput = (id, prop) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', (e) => {
-        AppState.projectInfo[prop] = e.target.value;
-        saveProjectInfo();
-        showAutoSaveIndicator();
-      });
-    }
-  };
+  // 7. Ações de Edição da Ficha Técnica e Dados da Obra
+  const btnEditProject = document.getElementById('btn-edit-project');
+  if (btnEditProject) btnEditProject.addEventListener('click', openProjectModal);
 
-  bindHeaderInput('header-input-nome', 'nomeObra');
-  bindHeaderInput('header-input-cliente', 'cliente');
-  bindHeaderInput('header-input-local', 'localizacao');
-  bindHeaderInput('header-input-lotequadra', 'loteQuadra');
-  bindHeaderInput('header-input-zona', 'zona');
-  bindHeaderInput('header-input-tipologia', 'tipologia');
-  bindHeaderInput('header-input-areaconst', 'areaConstruida');
-  bindHeaderInput('header-input-areaterreno', 'areaTerreno');
-  bindHeaderInput('header-input-inicio', 'dataInicio');
-  bindHeaderInput('header-input-fim', 'previsaoConclusao');
+  const btnQuickEdit = document.getElementById('btn-quick-edit-project');
+  if (btnQuickEdit) btnQuickEdit.addEventListener('click', openProjectModal);
 
-  // Botão "Novo Projeto (Limpar Campos)"
-  const btnNewProject = document.getElementById('btn-new-project');
-  if (btnNewProject) {
-    btnNewProject.addEventListener('click', () => {
-      AppState.projectInfo = {
-        nomeObra: '',
-        cliente: '',
-        localizacao: '',
-        loteQuadra: '',
-        zona: '',
-        areaConstruida: '',
-        areaTerreno: '',
-        tipologia: '',
-        dataInicio: '',
-        previsaoConclusao: '',
-        prazoTotal: '',
-        empresa: 'ArqVértice • Arquitetura, Estrutura & Engenharia'
-      };
-      saveProjectInfo();
-      renderProjectInfo();
-      showToast('✨ Campos em branco prontos para adicionar os dados de entrada do novo projeto!');
-      const inpNome = document.getElementById('header-input-nome');
-      if (inpNome) inpNome.focus();
+  const btnCloseProjectModal = document.getElementById('btn-close-project-modal');
+  if (btnCloseProjectModal) btnCloseProjectModal.addEventListener('click', closeProjectModal);
+
+  const btnCancelProjectModal = document.getElementById('btn-cancel-project-modal');
+  if (btnCancelProjectModal) btnCancelProjectModal.addEventListener('click', closeProjectModal);
+
+  const formProjectInfo = document.getElementById('form-project-info');
+  if (formProjectInfo) formProjectInfo.addEventListener('submit', saveProjectFromModal);
+
+  // Botão "Novo Projeto (Limpar)" no Modal
+  const btnModalNew = document.getElementById('btn-modal-new-project');
+  if (btnModalNew) {
+    btnModalNew.addEventListener('click', () => {
+      document.getElementById('form-proj-nome').value = '';
+      document.getElementById('form-proj-cliente').value = '';
+      document.getElementById('form-proj-local').value = '';
+      document.getElementById('form-proj-lotequadra').value = '';
+      document.getElementById('form-proj-zona').value = '';
+      document.getElementById('form-proj-tipologia').value = '';
+      document.getElementById('form-proj-areaconst').value = '';
+      document.getElementById('form-proj-areaterreno').value = '';
+      document.getElementById('form-proj-inicio').value = '';
+      document.getElementById('form-proj-fim').value = '';
+      showToast('Campos limpos para preenchimento de nova obra!');
     });
   }
 
-  // Botão "Carregar Exemplo"
-  const btnSampleProject = document.getElementById('btn-sample-project');
-  if (btnSampleProject) {
-    btnSampleProject.addEventListener('click', () => {
-      AppState.projectInfo = { ...DEFAULT_PROJECT_INFO };
-      saveProjectInfo();
-      renderProjectInfo();
-      showToast('Modelo de exemplo carregado com sucesso!');
+  // Botão "Carregar Exemplo" no Modal
+  const btnModalSample = document.getElementById('btn-modal-sample-project');
+  if (btnModalSample) {
+    btnModalSample.addEventListener('click', () => {
+      const p = DEFAULT_PROJECT_INFO;
+      document.getElementById('form-proj-nome').value = p.nomeObra;
+      document.getElementById('form-proj-cliente').value = p.cliente;
+      document.getElementById('form-proj-local').value = p.localizacao;
+      document.getElementById('form-proj-lotequadra').value = p.loteQuadra;
+      document.getElementById('form-proj-zona').value = p.zona;
+      document.getElementById('form-proj-tipologia').value = p.tipologia;
+      document.getElementById('form-proj-areaconst').value = p.areaConstruida;
+      document.getElementById('form-proj-areaterreno').value = p.areaTerreno;
+      document.getElementById('form-proj-inicio').value = p.dataInicio;
+      document.getElementById('form-proj-fim').value = p.previsaoConclusao;
+      showToast('Dados de exemplo preenchidos no formulário!');
     });
   }
 
