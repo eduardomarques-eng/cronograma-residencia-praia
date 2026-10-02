@@ -116,6 +116,15 @@ e pushes para `main`. Na Vercel, configure as mesmas variáveis de ambiente e us
 ### Estrutura
 
 - `src/app`: páginas, portal, relatório imprimível e rotas de autenticação.
+
+### Link seguro de briefing
+
+Administradores podem gerar um link exclusivo na página do projeto. O endereço
+usa um token aleatório, enquanto o banco armazena somente seu hash SHA-256.
+Gerar novamente revoga o link anterior; revogar invalida o acesso imediatamente.
+O cliente preenche em `/briefing/<token>` sem receber um ID interno e, após o
+envio, é direcionado ao login do Portal do Cliente. O token não cria sessão
+administrativa nem concede acesso a outros recursos do projeto.
 - `src/server/services`: regras de negócio e acesso ao Prisma.
 - `src/lib`: validações, finanças e adaptador de paridade do cronograma.
 - `prisma`: schema, migrations e seed.

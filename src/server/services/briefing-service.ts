@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { briefingSchema, briefingUpdateSchema } from "@/lib/validation";
 import { notFound } from "@/server/errors";
 import { requireProjectAccess, requireRole } from "@/server/auth";
+import { resolveBriefingToken } from "./briefing-link-service";
 
 function jsonResponses(value: Record<string, unknown>): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -55,6 +56,28 @@ export async function finishBriefing(projectId: string) {
   return prisma.$transaction(async (tx) => {
     await tx.briefingRevision.create({ data: { briefingId: briefing.id, version: briefing.version, responses: jsonResponses((briefing.responses ?? {}) as Record<string, unknown>) } });
     return tx.briefing.update({ where: { projectId }, data: { submittedAt: now, finalizedAt: now, status: "FINALIZED" } });
+  });
+}
+
+export async function getBriefingByToken(token: string) {
+  const link = await resolveBriefingToken(token);
+  return link.briefing;
+}
+
+export async function saveBriefingResponsesByToken(token: string, input: unknown) {
+  const link = await resolveBriefingToken(token);
+  if (link.briefing.status === "FINALIZED") throw new Error("Este briefing já foi enviado.");
+  const data = briefingSchema.omit({ projectId: true }).parse(input);
+  return prisma.briefing.update({ where: { id: link.briefing.id }, data: { responses: jsonResponses(data.responses) } });
+}
+
+export async function finishBriefingByToken(token: string) {
+  const link = await resolveBriefingToken(token);
+  if (link.briefing.status === "FINALIZED") return link.briefing;
+  const now = new Date();
+  return prisma.$transaction(async (tx) => {
+    await tx.briefingRevision.create({ data: { briefingId: link.briefing.id, version: link.briefing.version, responses: jsonResponses((link.briefing.responses ?? {}) as Record<string, unknown>) } });
+    return tx.briefing.update({ where: { id: link.briefing.id }, data: { submittedAt: now, finalizedAt: now, status: "FINALIZED" } });
   });
 }
 

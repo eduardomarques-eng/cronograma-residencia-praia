@@ -9,6 +9,8 @@ import { saveBriefingResponses } from "@/server/services/briefing-service";
 import { finishBriefing, reopenBriefing } from "@/server/services/briefing-service";
 import { removeVisualOption, saveVisualOption } from "@/server/services/briefing-service";
 import { requireProjectAccess, requireRole } from "@/server/auth";
+import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@/server/services/briefing-link-service";
+import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
 
 export async function saveClientAction(input: unknown) {
   await requireRole("ADMIN");
@@ -91,4 +93,28 @@ export async function saveBriefingVisualOptionAction(input: Parameters<typeof sa
 
 export async function removeBriefingVisualOptionAction(id: string) {
   return removeVisualOption(id);
+}
+
+export async function createBriefingLinkAction(projectId: string) {
+  const result = await createBriefingLink(projectId);
+  revalidatePath(`/projetos/${projectId}`);
+  return result;
+}
+
+export async function revokeBriefingLinkAction(projectId: string) {
+  const result = await revokeBriefingLink(projectId);
+  revalidatePath(`/projetos/${projectId}`);
+  return result;
+}
+
+export async function getBriefingLinkStatusAction(projectId: string) {
+  return getBriefingLinkStatus(projectId);
+}
+
+export async function saveBriefingTokenAction(token: string, input: unknown) {
+  return saveBriefingResponsesByToken(token, input);
+}
+
+export async function finishBriefingTokenAction(token: string) {
+  return finishBriefingByToken(token);
 }
