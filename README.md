@@ -125,6 +125,16 @@ Gerar novamente revoga o link anterior; revogar invalida o acesso imediatamente.
 O cliente preenche em `/briefing/<token>` sem receber um ID interno e, após o
 envio, é direcionado ao login do Portal do Cliente. O token não cria sessão
 administrativa nem concede acesso a outros recursos do projeto.
+
+### Respostas por voz
+
+Campos de texto do briefing exibem um botão de microfone em navegadores que
+suportam a Web Speech API. A captura usa `pt-BR`, mostra a transcrição
+progressivamente e permite pausar, continuar, cancelar e editar o texto antes
+do autosave. O áudio não é enviado nem armazenado pela aplicação: a transcrição
+é processada pelo navegador e somente o texto confirmado pelo cliente segue o
+mesmo fluxo de persistência das respostas digitadas. Em ambientes sem suporte
+ou sem permissão de microfone, o campo permanece disponível para digitação.
 - `src/server/services`: regras de negócio e acesso ao Prisma.
 - `src/lib`: validações, finanças e adaptador de paridade do cronograma.
 - `prisma`: schema, migrations e seed.

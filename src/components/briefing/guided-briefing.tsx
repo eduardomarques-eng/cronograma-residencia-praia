@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { finishBriefingAction, finishBriefingTokenAction, saveBriefingAction, saveBriefingTokenAction } from "@/app/actions/domain-actions";
 import { allBriefingQuestions, briefingSections, type BriefingQuestion } from "@/lib/briefing-definition";
+import { VoiceTextarea } from "./voice-textarea";
 
 type Props = { projectId: string; accessToken?: string; initialResponses: Record<string, unknown>; initialStatus: "DRAFT" | "FINALIZED"; initialVersion: number; persistedVisualOptions: { questionId: string; value: string; title: string; description: string | null; imageUrl: string | null; altText: string | null }[] };
 
@@ -45,7 +46,7 @@ export function GuidedBriefing({ projectId, accessToken, initialResponses, initi
   function renderQuestion(question: BriefingQuestion) {
     const value = responses[question.id];
     if (question.type === "long" || question.type === "short") {
-      return <textarea aria-label={question.text} value={typeof value === "string" ? value : ""} onChange={(event) => update(question, event.target.value)} rows={question.type === "long" ? 4 : 2} className="min-h-24 w-full resize-y rounded-2xl border border-slate-200 bg-white p-4 text-base outline-none transition focus:border-blue-500" />;
+      return <VoiceTextarea label={question.text} value={typeof value === "string" ? value : ""} onChange={(nextValue) => update(question, nextValue)} rows={question.type === "long" ? 4 : 2} />;
     }
     if (question.type === "single") {
       return <div className="grid gap-3">{question.options?.map((option) => <label key={option} className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border p-4 text-sm transition ${value === option ? "border-blue-500 bg-blue-50 text-blue-900" : "border-slate-200 bg-white hover:border-slate-300"}`}><input type="radio" name={question.id} checked={value === option} onChange={() => update(question, option)} className="size-4 accent-blue-600" />{option}</label>)}</div>;
