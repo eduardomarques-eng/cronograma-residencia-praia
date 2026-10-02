@@ -47,6 +47,13 @@ export async function requireRole(role: AuthRole) {
   return user;
 }
 
+export async function requirePageRole(role: AuthRole) {
+  const user = await currentUser();
+  if (!user) redirect("/login");
+  if (user.role !== role) redirect("/");
+  return user;
+}
+
 export async function requireProjectAccess(projectId: string) {
   const user = await currentUser();
   if (!user) throw new DomainError("É necessário entrar para continuar.", "NOT_FOUND");

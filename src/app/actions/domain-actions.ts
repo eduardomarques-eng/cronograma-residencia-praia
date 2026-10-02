@@ -6,6 +6,8 @@ import { createProject, updateProject } from "@/server/services/project-service"
 import { createScheduleStage, updateScheduleStage } from "@/server/services/schedule-service";
 import { createProjectPayment, updateProjectPayment } from "@/server/services/payment-service";
 import { saveBriefingResponses } from "@/server/services/briefing-service";
+import { finishBriefing, reopenBriefing } from "@/server/services/briefing-service";
+import { removeVisualOption, saveVisualOption } from "@/server/services/briefing-service";
 import { requireProjectAccess, requireRole } from "@/server/auth";
 
 export async function saveClientAction(input: unknown) {
@@ -69,4 +71,24 @@ export async function saveBriefingAction(projectId: string, input: unknown) {
   const result = await saveBriefingResponses(projectId, input);
   revalidatePath("/");
   return result;
+}
+
+export async function finishBriefingAction(projectId: string) {
+  const result = await finishBriefing(projectId);
+  revalidatePath(`/portal/${projectId}/briefing`);
+  return result;
+}
+
+export async function reopenBriefingAction(projectId: string) {
+  const result = await reopenBriefing(projectId);
+  revalidatePath(`/portal/${projectId}/briefing`);
+  return result;
+}
+
+export async function saveBriefingVisualOptionAction(input: Parameters<typeof saveVisualOption>[0]) {
+  return saveVisualOption(input);
+}
+
+export async function removeBriefingVisualOptionAction(id: string) {
+  return removeVisualOption(id);
 }

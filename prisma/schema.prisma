@@ -37,6 +37,11 @@ enum UserRole {
   CLIENT
 }
 
+enum BriefingStatus {
+  DRAFT
+  FINALIZED
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
@@ -177,8 +182,40 @@ model Briefing {
   id          String   @id @default(uuid()) @db.Uuid
   projectId   String   @unique @db.Uuid
   responses   Json
+  status      BriefingStatus @default(DRAFT)
+  version     Int      @default(1)
   submittedAt DateTime?
+  finalizedAt DateTime?
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  revisions   BriefingRevision[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model BriefingRevision {
+  id          String   @id @default(uuid()) @db.Uuid
+  briefingId  String   @db.Uuid
+  version     Int
+  responses   Json
+  createdAt   DateTime @default(now())
+  briefing    Briefing @relation(fields: [briefingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([briefingId, version])
+  @@index([briefingId, createdAt])
+}
+
+model BriefingVisualOption {
+  id          String   @id @default(uuid()) @db.Uuid
+  questionId  String
+  value       String
+  title       String
+  description String?
+  imageUrl    String?
+  altText     String?
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([questionId, sortOrder])
 }
