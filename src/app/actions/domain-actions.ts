@@ -11,6 +11,7 @@ import { removeVisualOption, saveVisualOption } from "@/server/services/briefing
 import { requireProjectAccess, requireRole } from "@/server/auth";
 import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@/server/services/briefing-link-service";
 import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
+import { updateReportVisibility } from "@/server/services/report-visibility-service";
 
 export async function saveClientAction(input: unknown) {
   await requireRole("ADMIN");
@@ -117,4 +118,11 @@ export async function saveBriefingTokenAction(token: string, input: unknown) {
 
 export async function finishBriefingTokenAction(token: string) {
   return finishBriefingByToken(token);
+}
+
+export async function updateReportVisibilityAction(projectId: string, reportId: string, status: "PREPARING" | "INTERNAL" | "RELEASED" | "ARCHIVED") {
+  const result = await updateReportVisibility(projectId, reportId, status);
+  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
+  return result;
 }

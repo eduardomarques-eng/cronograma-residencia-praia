@@ -42,6 +42,13 @@ enum BriefingStatus {
   FINALIZED
 }
 
+enum ProjectReportStatus {
+  PREPARING
+  INTERNAL
+  RELEASED
+  ARCHIVED
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
@@ -119,11 +126,26 @@ model Project {
   stages         ScheduleStage[]
   payments       Payment[]
   briefing       Briefing?
+  reports        ProjectReport[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
   @@index([clientId])
   @@index([status])
+}
+
+model ProjectReport {
+  id          String             @id @default(uuid()) @db.Uuid
+  projectId   String             @db.Uuid
+  title       String
+  status      ProjectReportStatus @default(PREPARING)
+  releasedAt  DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([projectId, status])
 }
 
 model ScheduleStage {

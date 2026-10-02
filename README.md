@@ -135,6 +135,18 @@ do autosave. O áudio não é enviado nem armazenado pela aplicação: a transcr
 é processada pelo navegador e somente o texto confirmado pelo cliente segue o
 mesmo fluxo de persistência das respostas digitadas. Em ambientes sem suporte
 ou sem permissão de microfone, o campo permanece disponível para digitação.
+
+### Ambientes ADMIN e CLIENTE
+
+O ambiente administrativo usa o centro operacional do projeto para concentrar
+briefing, cronograma, pagamentos, documentos, observações, links enviados e
+relatórios. Relatórios possuem publicação server-side (`PREPARING`, `INTERNAL`,
+`RELEASED` ou `ARCHIVED`); somente `RELEASED` é retornado ao cliente.
+O Portal do Cliente apresenta apenas o projeto autorizado pela sessão, seu
+cronograma, pagamentos autorizados, briefing e relatórios liberados. A
+interface não é o mecanismo de segurança: o filtro por `clientId`, o RBAC e a
+visibilidade de relatórios são aplicados no servidor.
+
 - `src/server/services`: regras de negócio e acesso ao Prisma.
 - `src/lib`: validações, finanças e adaptador de paridade do cronograma.
 - `prisma`: schema, migrations e seed.
