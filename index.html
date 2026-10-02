@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cronograma ArqVértice | Gestão Multidisciplinar</title>
   <meta name="description" content="Cronograma ArqVértice: acompanhamento de projetos e obra por fase — Arquitetura, 3D, Estrutural, Complementares e Execução, com relatório executivo em PDF para o cliente.">
+  <link rel="icon" type="image/png" href="logo.png">
   
   <!-- Fontes Google: Montserrat e JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -146,7 +147,7 @@
 
             <!-- 7. Prazos do Cronograma -->
             <div class="obra-data-item span-two-cols">
-              <span class="data-label"><i data-lucide="calendar-play"></i> Prazo & Cronograma Geral:</span>
+              <span class="data-label"><i data-lucide="calendar-clock"></i> Prazo & Cronograma Geral:</span>
               <span class="data-val highlight-date">
                 <span id="header-inicio-val">12-06-2026</span> até <span id="header-fim-val">30-11-2026</span>
               </span>
@@ -606,6 +607,23 @@
               <label for="form-proj-fim" class="form-label required">Previsão de Conclusão (DD-MM-YYYY)</label>
               <input type="text" id="form-proj-fim" class="form-input" required placeholder="Ex: 30-11-2026">
             </div>
+          </div>
+
+          <div class="payment-section">
+            <div class="payment-header">
+              <div>
+                <h3>Estrutura de Pagamentos</h3>
+                <p>Planejamento financeiro vinculado ao projeto.</p>
+              </div>
+              <button type="button" id="btn-add-payment" class="btn btn-secondary">
+                <i data-lucide="plus"></i>
+                <span>Adicionar parcela</span>
+              </button>
+            </div>
+
+            <div id="payment-list" class="payment-list" aria-live="polite"></div>
+
+            <div id="payment-summary" class="payment-summary"></div>
           </div>
 
           <div class="modal-actions" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">

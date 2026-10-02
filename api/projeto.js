@@ -21,13 +21,25 @@ const CAMPOS = {
   dataInicio: 'data_inicio',
   previsaoConclusao: 'previsao_conclusao',
   prazoTotal: 'prazo_total',
-  empresa: 'empresa'
+  empresa: 'empresa',
+  pagamentos: 'pagamentos'
 };
 
 function paraJSON(linha) {
   const saida = {};
   for (const [chaveJS, coluna] of Object.entries(CAMPOS)) {
-    saida[chaveJS] = linha[coluna] ?? '';
+    const valor = linha[coluna];
+    if (coluna === 'pagamentos') {
+      if (Array.isArray(valor)) saida[chaveJS] = valor;
+      else if (typeof valor === 'string') {
+        try { saida[chaveJS] = JSON.parse(valor); }
+        catch { saida[chaveJS] = []; }
+      } else {
+        saida[chaveJS] = [];
+      }
+      continue;
+    }
+    saida[chaveJS] = valor ?? '';
   }
   return saida;
 }
@@ -51,9 +63,17 @@ module.exports = async function handler(req, res) {
       const valores = [];
       for (const [chaveJS, coluna] of Object.entries(CAMPOS)) {
         if (corpo[chaveJS] === undefined) continue;
-        const v = String(corpo[chaveJS]);
-        if (v.length > 300) {
-          return json(res, 400, { erro: `${chaveJS} passa de 300 caracteres` });
+        let v;
+        if (coluna === 'pagamentos') {
+          if (!Array.isArray(corpo[chaveJS])) {
+            return json(res, 400, { erro: 'pagamentos deve ser um array' });
+          }
+          v = JSON.stringify(corpo[chaveJS]);
+        } else {
+          v = String(corpo[chaveJS]);
+          if (v.length > 300) {
+            return json(res, 400, { erro: `${chaveJS} passa de 300 caracteres` });
+          }
         }
         colunas.push(coluna);
         valores.push(v);

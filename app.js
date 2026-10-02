@@ -25,8 +25,56 @@ const DEFAULT_PROJECT_INFO = {
   dataInicio: '12-06-2026',
   previsaoConclusao: '30-11-2026',
   prazoTotal: '172 dias corridos',
-  empresa: 'ArqVértice • Arquitetura, Estrutura & Engenharia'
+  empresa: 'ArqVértice • Arquitetura, Estrutura & Engenharia',
+  pagamentos: []
 };
+
+function normalizePagamentos(pagamentos) {
+  if (!Array.isArray(pagamentos)) return [];
+
+  return pagamentos.map((item, index) => {
+    const valor = Number(String(item?.valor ?? '0').replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
+    const percentual = Number(item?.percentual ?? 0) || 0;
+    const status = ['pago', 'pendente', 'aguardando'].includes(item?.status) ? item.status : 'pendente';
+
+    return {
+      id: item?.id || `pagamento-${Date.now()}-${index}`,
+      nome: String(item?.nome || `Pagamento ${index + 1}`).trim() || `Pagamento ${index + 1}`,
+      valor,
+      percentual: Math.min(Math.max(percentual, 0), 100),
+      status,
+      dataVencimento: item?.dataVencimento || '',
+      observacao: item?.observacao || ''
+    };
+  });
+}
+
+function getPaymentSummary(pagamentos = []) {
+  const lista = normalizePagamentos(pagamentos);
+  const total = lista.reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const pagos = lista
+    .filter(item => item.status === 'pago')
+    .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const pendentes = lista
+    .filter(item => item.status !== 'pago')
+    .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+
+  return {
+    total,
+    pagos,
+    pendentes,
+    percentual: total > 0 ? (pagos / total) * 100 : 0,
+    parcelas: lista.length
+  };
+}
+
+function normalizeProjectInfo(raw = {}) {
+  const base = { ...DEFAULT_PROJECT_INFO, ...(raw || {}) };
+  return {
+    ...base,
+    pagamentos: normalizePagamentos(base.pagamentos)
+  };
+}
 
 /**
  * 1. DADOS DE SEED (Carga Inicial extraída fielmente do PDF)
@@ -261,14 +309,14 @@ function loadProjectInfo() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
-        AppState.projectInfo = { ...DEFAULT_PROJECT_INFO, ...parsed };
+        AppState.projectInfo = normalizeProjectInfo(parsed);
         return;
       }
     }
   } catch (e) {
     console.error('Erro ao carregar dados do projeto:', e);
   }
-  AppState.projectInfo = { ...DEFAULT_PROJECT_INFO };
+  AppState.projectInfo = normalizeProjectInfo(DEFAULT_PROJECT_INFO);
   saveProjectInfo();
 }
 
@@ -315,6 +363,120 @@ function renderProjectInfo() {
 
   const elFim = document.getElementById('header-fim-val');
   if (elFim) elFim.textContent = p.previsaoConclusao || 'DD-MM-AAAA';
+}
+
+function renderPaymentList() {
+  const container = document.getElementById('payment-list');
+  if (!container) return;
+
+  const pagamentos = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+  const summary = getPaymentSummary(pagamentos);
+
+  container.innerHTML = pagamentos.length
+    ? pagamentos.map((pagamento, index) => `
+      <div class="payment-row" data-index="${index}">
+        <div class="payment-field payment-name">
+          <label>Descrição</label>
+          <input type="text" class="payment-input" data-field="nome" value="${escapeHtml(pagamento.nome)}" placeholder="Ex: 1º pagamento">
+        </div>
+        <div class="payment-field payment-value">
+          <label>Valor</label>
+          <input type="number" min="0" step="0.01" class="payment-input" data-field="valor" value="${Number(pagamento.valor || 0).toFixed(2)}">
+        </div>
+        <div class="payment-field payment-percent">
+          <label>%</label>
+          <input type="number" min="0" max="100" step="1" class="payment-input" data-field="percentual" value="${Number(pagamento.percentual || 0).toFixed(0)}">
+        </div>
+        <div class="payment-field payment-status">
+          <label>Status</label>
+          <select class="payment-input" data-field="status">
+            <option value="pendente" ${pagamento.status === 'pendente' ? 'selected' : ''}>Pendente</option>
+            <option value="aguardando" ${pagamento.status === 'aguardando' ? 'selected' : ''}>Aguardando</option>
+            <option value="pago" ${pagamento.status === 'pago' ? 'selected' : ''}>Pago</option>
+          </select>
+        </div>
+        <div class="payment-field payment-date">
+          <label>Vencimento</label>
+          <input type="text" class="payment-input" data-field="dataVencimento" value="${escapeHtml(pagamento.dataVencimento || '')}" placeholder="DD-MM-AAAA">
+        </div>
+        <button type="button" class="btn btn-secondary btn-remove-payment" data-index="${index}" title="Remover parcela">
+          <i data-lucide="trash-2"></i>
+        </button>
+      </div>
+    `).join('')
+    : '<div class="payment-empty">Nenhuma parcela cadastrada. Adicione a primeira etapa de pagamento.</div>';
+
+  const summaryBox = document.getElementById('payment-summary');
+  if (summaryBox) {
+    summaryBox.innerHTML = `
+      <span>Total: <strong>R$ ${formatCurrency(summary.total)}</strong></span>
+      <span>Pago: <strong>R$ ${formatCurrency(summary.pagos)}</strong></span>
+      <span>Pendente: <strong>R$ ${formatCurrency(summary.pendentes)}</strong></span>
+      <span>Progresso: <strong>${Math.round(summary.percentual)}%</strong></span>
+    `;
+  }
+
+  document.querySelectorAll('.btn-remove-payment').forEach(button => {
+    button.addEventListener('click', () => {
+      const index = Number(button.dataset.index || 0);
+      const current = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+      current.splice(index, 1);
+      AppState.projectInfo.pagamentos = current;
+      renderPaymentList();
+    });
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function addPaymentRow() {
+  const pagamentos = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+  pagamentos.push({
+    id: `pagamento-${Date.now()}`,
+    nome: `Pagamento ${pagamentos.length + 1}`,
+    valor: 0,
+    percentual: 0,
+    status: 'pendente',
+    dataVencimento: '',
+    observacao: ''
+  });
+  AppState.projectInfo.pagamentos = pagamentos;
+  renderPaymentList();
+}
+
+function collectPaymentRowsFromDOM() {
+  const rows = document.querySelectorAll('.payment-row');
+  return Array.from(rows).map((row, index) => {
+    const inputs = row.querySelectorAll('[data-field]');
+    const payload = {};
+
+    inputs.forEach(input => {
+      const field = input.dataset.field;
+      const value = input.value;
+      payload[field] = field === 'valor' ? Number(value || 0) : value;
+    });
+
+    return {
+      id: `pagamento-${Date.now()}-${index}`,
+      nome: String(payload.nome || `Pagamento ${index + 1}`).trim() || `Pagamento ${index + 1}`,
+      valor: Number(payload.valor || 0),
+      percentual: Number(payload.percentual || 0),
+      status: ['pago', 'pendente', 'aguardando'].includes(payload.status) ? payload.status : 'pendente',
+      dataVencimento: payload.dataVencimento || '',
+      observacao: payload.observacao || ''
+    };
+  });
+}
+
+function formatCurrency(value) {
+  return Number(value || 0).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
 function loadTasks() {
@@ -1281,6 +1443,9 @@ function initEventListeners() {
     });
   }
 
+  const btnAddPayment = document.getElementById('btn-add-payment');
+  if (btnAddPayment) btnAddPayment.addEventListener('click', addPaymentRow);
+
   // 8. Ações de Relatório Executivo PDF
   const btnOpenReport = document.getElementById('btn-open-report');
   if (btnOpenReport) btnOpenReport.addEventListener('click', openReportModal);
@@ -1342,6 +1507,8 @@ function openProjectModal() {
   const fFim = document.getElementById('form-proj-fim');
   if (fFim) fFim.value = p.previsaoConclusao || '';
 
+  renderPaymentList();
+
   const modal = document.getElementById('project-modal');
   if (modal) modal.classList.add('open');
   if (window.lucide) lucide.createIcons();
@@ -1365,6 +1532,7 @@ function saveProjectFromModal(e) {
   const fAreaTerreno = document.getElementById('form-proj-areaterreno');
   const fInicio = document.getElementById('form-proj-inicio');
   const fFim = document.getElementById('form-proj-fim');
+  const pagamentos = collectPaymentRowsFromDOM();
 
   AppState.projectInfo = {
     ...AppState.projectInfo,
@@ -1377,11 +1545,13 @@ function saveProjectFromModal(e) {
     areaConstruida: fAreaConst ? fAreaConst.value.trim() : AppState.projectInfo.areaConstruida,
     areaTerreno: fAreaTerreno ? fAreaTerreno.value.trim() : AppState.projectInfo.areaTerreno,
     dataInicio: fInicio ? fInicio.value.trim() : AppState.projectInfo.dataInicio,
-    previsaoConclusao: fFim ? fFim.value.trim() : AppState.projectInfo.previsaoConclusao
+    previsaoConclusao: fFim ? fFim.value.trim() : AppState.projectInfo.previsaoConclusao,
+    pagamentos: normalizePagamentos(pagamentos)
   };
 
   saveProjectInfo();
   renderProjectInfo();
+  renderPaymentList();
   closeProjectModal();
   showToast('Ficha técnica da obra atualizada com sucesso!');
 

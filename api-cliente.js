@@ -114,7 +114,7 @@ const Remoto = {
     }
 
     if (projeto?.projeto) {
-      AppState.projectInfo = { ...DEFAULT_PROJECT_INFO, ...projeto.projeto };
+      AppState.projectInfo = normalizeProjectInfo(projeto.projeto);
       saveProjectInfo();
     }
 

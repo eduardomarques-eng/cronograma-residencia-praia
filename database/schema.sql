@@ -23,8 +23,12 @@ CREATE TABLE IF NOT EXISTS projeto (
     previsao_conclusao  TEXT NOT NULL DEFAULT '',
     prazo_total         TEXT NOT NULL DEFAULT '',
     empresa             TEXT NOT NULL DEFAULT 'ArqVértice',
+    pagamentos          JSONB NOT NULL DEFAULT '[]'::jsonb,
     atualizado_em       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE projeto
+  ADD COLUMN IF NOT EXISTS pagamentos JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 -- ---------------------------------------------------------------------------
 -- 2. ETAPAS DO CRONOGRAMA
