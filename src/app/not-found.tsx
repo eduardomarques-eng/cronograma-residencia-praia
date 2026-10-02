@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound() { return <main className="flex min-h-screen items-center justify-center bg-[#f5f5f7] p-6"><div className="text-center"><p className="text-sm font-semibold text-blue-600">404</p><h1 className="mt-2 text-2xl font-bold text-slate-900">Página não encontrada</h1><Link href="/" className="mt-5 inline-block text-sm font-semibold text-blue-600">Voltar para a visão geral</Link></div></main>; }

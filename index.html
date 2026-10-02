@@ -34,15 +34,9 @@
           </div>
           <div class="master-brand-text">
             <div class="project-tag">
-              <span class="pulse-dot"></span>
-              ARQVÉRTICE • ARQUITETURA, ESTRUTURA & GESTÃO DE OBRAS
+                ARQVÉRTICE • CRONOGRAMA DE PROJETOS
             </div>
             <h1 class="project-title">Cronograma ArqVértice</h1>
-            <p class="project-subtitle">Sistema Integrado de Planejamento, Prazos e Execução Técnica</p>
-            <div class="brand-quality-summary">
-              <i data-lucide="award"></i>
-              <span>Projetos e obras desenvolvidos com <strong>máximo rigor técnico, organização e excelência</strong> do canteiro à entrega final.</span>
-            </div>
           </div>
         </div>
 
@@ -67,15 +61,21 @@
             <span>Relatório PDF</span>
           </button>
 
-          <button id="btn-reset-seed" class="btn btn-secondary" title="Restaurar tarefas padrão">
-            <i data-lucide="rotate-ccw"></i>
-            <span>Restaurar Padrão</span>
-          </button>
-
-          <button id="btn-export-json" class="btn btn-secondary" title="Exportar dados em JSON">
-            <i data-lucide="download"></i>
-            <span>Exportar</span>
-          </button>
+          <details class="header-more-actions">
+            <summary aria-label="Mais ações" title="Mais ações">
+              <i data-lucide="ellipsis"></i>
+            </summary>
+            <div class="header-more-menu">
+              <button id="btn-reset-seed" class="btn btn-secondary" title="Restaurar tarefas padrão">
+                <i data-lucide="rotate-ccw"></i>
+                <span>Restaurar Padrão</span>
+              </button>
+              <button id="btn-export-json" class="btn btn-secondary" title="Exportar dados em JSON">
+                <i data-lucide="download"></i>
+                <span>Exportar dados</span>
+              </button>
+            </div>
+          </details>
 
           <button id="btn-new-task" class="btn btn-primary">
             <i data-lucide="plus"></i>
@@ -86,28 +86,21 @@
 
       <!-- Ficha Técnica Consolidada: Dados da Obra, Cliente, Local, Cadastrais e Equipe Técnica -->
       <div class="master-info-card">
-        <!-- Coluna 1: Dossiê Técnico e Dados Cadastrais da Obra -->
         <div class="master-obra-details">
-          <div class="obra-header-quick-bar">
-            <div class="obra-badge-row">
-              <span class="badge-obra-type"><i data-lucide="building-2"></i> <span id="header-tipologia-badge">RESIDENCIAL UNIFAMILIAR</span></span>
-              <span class="badge-obra-status"><i data-lucide="activity"></i> EM ANDAMENTO</span>
-            </div>
-            <button id="btn-quick-edit-project" class="btn-quick-edit" title="Editar dados cadastrais da obra">
-              <i data-lucide="edit-3"></i> <span>Editar Dados</span>
-            </button>
-          </div>
-
-          <!-- Nome da Obra e Cliente -->
           <div class="obra-title-display-wrap">
-            <h2 class="master-obra-name" id="header-obra-name">Residência de Praia</h2>
+            <div class="obra-primary-row">
+              <h2 class="master-obra-name" id="header-obra-name">Residência de Praia</h2>
+              <span class="badge-obra-type">
+                <i data-lucide="building-2"></i>
+                <span id="header-tipologia-badge">RESIDENCIAL UNIFAMILIAR</span>
+              </span>
+            </div>
             <div class="master-obra-cliente-row">
               <span class="cliente-tag-label"><i data-lucide="user"></i> Cliente / Contratante:</span>
               <strong class="cliente-tag-val" id="header-cliente-val">Pedro</strong>
             </div>
           </div>
           
-          <!-- Grid Organizado de Especificações Técnicas e Cadastrais -->
           <div class="obra-data-grid">
             <!-- 1. Localização -->
             <div class="obra-data-item">
@@ -157,17 +150,6 @@
 
       </div>
 
-      <!-- Equipe Técnica: logo abaixo dos dados da obra, com a carga real de cada profissional -->
-      <div class="master-team-block">
-        <div class="team-block-title">
-          <i data-lucide="users"></i>
-          <span>RESPONSÁVEIS TÉCNICOS POR PROJETO</span>
-          <span class="team-block-hint">Cada profissional e o avanço das entregas sob sua responsabilidade</span>
-        </div>
-
-        <!-- Cards renderizados por painel-cliente.js a partir das tarefas -->
-        <div class="master-executores-grid" id="team-grid"></div>
-      </div>
     </header>
 
     <!-- FAIXA DE FASE ATUAL: onde o empreendimento está agora -->
@@ -323,6 +305,29 @@
           <p class="kpi-hint">Tarefas não finalizadas com entrega próxima ou vencidas</p>
         </div>
       </div>
+    </section>
+
+    <section class="master-team-block" aria-labelledby="team-section-title">
+      <div class="team-block-title">
+        <i data-lucide="users"></i>
+        <h2 id="team-section-title">Equipe técnica</h2>
+        <span class="team-block-hint">Responsáveis e avanço das entregas</span>
+      </div>
+      <div class="master-executores-grid" id="team-grid"></div>
+    </section>
+
+    <section class="payment-overview" aria-labelledby="payment-overview-title">
+      <div class="payment-overview-header">
+        <div>
+          <h2 id="payment-overview-title">Pagamentos</h2>
+          <p id="payment-overview-next">Próximo pagamento não definido</p>
+        </div>
+        <button type="button" id="btn-manage-payments" class="btn btn-secondary">
+          <i data-lucide="credit-card"></i>
+          <span>Gerenciar parcelas</span>
+        </button>
+      </div>
+      <div id="payment-overview-summary" class="payment-overview-summary"></div>
     </section>
 
     <!-- BARRA DE CONTROLE, FILTROS E VENCIMENTO -->
@@ -537,14 +542,14 @@
 
     <!-- MODAL DE EDIÇÃO DE DADOS DA OBRA / FICHA CADASTRAL -->
     <div id="project-modal" class="modal-overlay">
-      <div class="modal-card">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="project-modal-title" tabindex="-1">
         <div class="modal-header">
           <div class="modal-title-wrapper">
             <div class="modal-icon-badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent);">
               <i data-lucide="settings-2"></i>
             </div>
             <div>
-              <h2>Ficha Cadastral e Dados de Entrada da Obra</h2>
+              <h2 id="project-modal-title">Ficha Cadastral e Dados de Entrada da Obra</h2>
               <p class="modal-subtitle">Atualize as informações cadastrais, urbanísticas e prazos do empreendimento</p>
             </div>
           </div>
@@ -624,6 +629,8 @@
             <div id="payment-list" class="payment-list" aria-live="polite"></div>
 
             <div id="payment-summary" class="payment-summary"></div>
+
+            <div id="payment-history" class="payment-history" aria-live="polite"></div>
           </div>
 
           <div class="modal-actions" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -649,7 +656,7 @@
 
     <!-- MODAL DE CRIAÇÃO / EDIÇÃO DE TAREFA -->
     <div id="task-modal" class="modal-overlay">
-      <div class="modal-card">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title" tabindex="-1">
         <div class="modal-header">
           <div class="modal-title-wrapper">
             <div class="modal-icon-badge">
@@ -743,14 +750,14 @@
 
     <!-- MODAL DE RELATÓRIO EXECUTIVO PDF COMPLETO -->
     <div id="report-modal" class="modal-overlay">
-      <div class="modal-card report-modal-card">
+      <div class="modal-card report-modal-card" role="dialog" aria-modal="true" aria-labelledby="report-modal-title" tabindex="-1">
         <div class="modal-header report-modal-header no-print">
           <div class="modal-title-wrapper">
             <div class="modal-icon-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
               <i data-lucide="file-check-2"></i>
             </div>
             <div>
-              <h2>Relatório Executivo Oficial de Cronograma & Obras</h2>
+              <h2 id="report-modal-title">Relatório Executivo Oficial de Cronograma & Obras</h2>
               <p class="modal-subtitle">Dossiê técnico consolidado para o cliente com alto contraste e clareza</p>
             </div>
           </div>
@@ -799,7 +806,7 @@
                 1. DADOS DE ENTRADA E FICHA TÉCNICA DO PROJETO
               </h3>
               
-              <div style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 0.75rem;">
+              <div class="report-project-data-grid" style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 0.75rem;">
                 <div>
                   <span style="color: #475569; font-weight: 800; display: block; font-size: 0.6875rem; text-transform: uppercase;">OBRA:</span>
                   <strong style="color: #020617; font-size: 0.8125rem; font-weight: 800;" id="rep-cad-obra">Residência de Praia</strong>
@@ -841,7 +848,7 @@
                 2. QUADRO TÉCNICO DE ENGENHARIA & ARQUITETURA
               </h3>
               
-              <div style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 0.75rem;">
+              <div class="report-team-grid" style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 8px; padding: 12px 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; font-size: 0.75rem;">
                 <div style="border-left: 4px solid #c2410c; padding-left: 10px;">
                   <strong style="color: #c2410c; display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 800;">🏗️ Execução de Obra</strong>
                   <span style="font-weight: 900; color: #020617; font-size: 0.85rem; display: block;">Erick Santiago</span>
@@ -960,10 +967,33 @@
               </div>
             </div>
 
-            <!-- 6. QUADRO DETALHADO DE ENTREGAS TÉCNICAS COM ALTO CONTRASTE -->
+            <div class="report-section-block report-financial-section" style="margin-bottom: 16px;">
+              <h3 class="report-section-title">6. RESUMO FINANCEIRO DO PROJETO</h3>
+              <div class="report-finance-summary">
+                <div><span>Valor total</span><strong id="report-finance-total">—</strong></div>
+                <div><span>Valor pago</span><strong id="report-finance-paid">—</strong></div>
+                <div><span>Valor pendente</span><strong id="report-finance-pending">—</strong></div>
+              </div>
+              <p id="report-finance-next" class="report-finance-next">Próximo pagamento não definido</p>
+              <table class="report-payment-table">
+                <thead>
+                  <tr>
+                    <th>Parcela</th>
+                    <th>Data prevista</th>
+                    <th>Data paga</th>
+                    <th>Etapa relacionada</th>
+                    <th>Status</th>
+                    <th>Valor</th>
+                  </tr>
+                </thead>
+                <tbody id="report-payment-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- 7. QUADRO DETALHADO DE ENTREGAS TÉCNICAS COM ALTO CONTRASTE -->
             <div class="report-section-block" style="margin-bottom: 16px;">
               <h3 class="report-section-title" style="font-size: 0.85rem; font-weight: 900; color: #020617; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; border-left: 5px solid #0f172a; padding-left: 10px;">
-                6. QUADRO CONSOLIDADO DE ETAPAS & ENTREGAS
+                7. QUADRO CONSOLIDADO DE ETAPAS & ENTREGAS
               </h3>
 
               <table class="report-table" style="width: 100%; border-collapse: collapse; font-size: 0.75rem; color: #020617; border: 1.5px solid #0f172a;">
@@ -983,7 +1013,7 @@
               </table>
             </div>
 
-            <!-- 7. LEGENDA OFICIAL -->
+            <!-- 8. LEGENDA OFICIAL -->
             <div class="report-legend-block" style="background: #ffffff; border: 1.5px solid #0f172a; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.72rem;">
               <strong style="color: #020617; font-size: 0.75rem;">Critérios Oficiais de Acompanhamento:</strong>
               <div class="report-legend-row" style="display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;">
@@ -1029,7 +1059,7 @@
     </div>
 
     <!-- NOTIFICAÇÃO TOAST FLUTUANTE -->
-    <div id="toast" class="toast">
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
       <i data-lucide="check-circle" class="toast-icon"></i>
       <span id="toast-message">Ação concluída com sucesso!</span>
     </div>

@@ -33,17 +33,19 @@ function normalizePagamentos(pagamentos) {
   if (!Array.isArray(pagamentos)) return [];
 
   return pagamentos.map((item, index) => {
-    const valor = Number(String(item?.valor ?? '0').replace(/[R$\s.]/g, '').replace(',', '.')) || 0;
-    const percentual = Number(item?.percentual ?? 0) || 0;
+    const valor = Math.max(0, Number(String(item?.valor ?? '0').replace(/[R$\s.]/g, '').replace(',', '.')) || 0);
+    const percentual = Math.min(100, Math.max(0, Number(item?.percentual ?? 0) || 0));
     const status = ['pago', 'pendente', 'aguardando'].includes(item?.status) ? item.status : 'pendente';
 
     return {
-      id: item?.id || `pagamento-${Date.now()}-${index}`,
+      id: item?.id || generateUUID(),
       nome: String(item?.nome || `Pagamento ${index + 1}`).trim() || `Pagamento ${index + 1}`,
       valor,
-      percentual: Math.min(Math.max(percentual, 0), 100),
+      percentual,
       status,
       dataVencimento: item?.dataVencimento || '',
+      dataPagamento: item?.dataPagamento || '',
+      tarefaId: item?.tarefaId || '',
       observacao: item?.observacao || ''
     };
   });
@@ -58,13 +60,21 @@ function getPaymentSummary(pagamentos = []) {
   const pendentes = lista
     .filter(item => item.status !== 'pago')
     .reduce((acc, item) => acc + Number(item.valor || 0), 0);
+  const proximos = lista
+    .filter(item => item.status !== 'pago' && item.dataVencimento)
+    .sort((a, b) => parseDateBR(a.dataVencimento) - parseDateBR(b.dataVencimento));
+  const historico = lista
+    .filter(item => item.status === 'pago')
+    .sort((a, b) => parseDateBR(b.dataPagamento || b.dataVencimento) - parseDateBR(a.dataPagamento || a.dataVencimento));
 
   return {
     total,
     pagos,
     pendentes,
     percentual: total > 0 ? (pagos / total) * 100 : 0,
-    parcelas: lista.length
+    parcelas: lista.length,
+    proximo: proximos[0] || null,
+    historico
   };
 }
 
@@ -214,6 +224,8 @@ const AppState = {
   currentView: 'kanban', // 'kanban' ou 'datagrid'
   draggedTaskId: null
 };
+
+let projectPaymentsBeforeEdit = null;
 
 /**
  * 3. HELPERS DE CÁLCULO E FORMATAÇÃO (MODELAGEM DE DADOS)
@@ -371,55 +383,90 @@ function renderPaymentList() {
 
   const pagamentos = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
   const summary = getPaymentSummary(pagamentos);
+  const tarefas = Array.isArray(AppState.tasks) ? AppState.tasks : [];
 
   container.innerHTML = pagamentos.length
-    ? pagamentos.map((pagamento, index) => `
-      <div class="payment-row" data-index="${index}">
+    ? pagamentos.map((pagamento, index) => {
+      const prefix = `payment-${index}`;
+      return `
+      <div class="payment-row" data-index="${index}" data-payment-id="${escapeHtml(pagamento.id)}">
         <div class="payment-field payment-name">
-          <label>Descrição</label>
-          <input type="text" class="payment-input" data-field="nome" value="${escapeHtml(pagamento.nome)}" placeholder="Ex: 1º pagamento">
+          <label for="${prefix}-name">Parcela</label>
+          <input type="text" id="${prefix}-name" class="payment-input" data-field="nome" value="${escapeHtml(pagamento.nome)}" placeholder="Ex: Entrada" required>
         </div>
         <div class="payment-field payment-value">
-          <label>Valor</label>
-          <input type="number" min="0" step="0.01" class="payment-input" data-field="valor" value="${Number(pagamento.valor || 0).toFixed(2)}">
+          <label for="${prefix}-value">Valor</label>
+          <input type="number" id="${prefix}-value" min="0" step="0.01" class="payment-input" data-field="valor" value="${Number(pagamento.valor || 0).toFixed(2)}">
         </div>
         <div class="payment-field payment-percent">
-          <label>%</label>
-          <input type="number" min="0" max="100" step="1" class="payment-input" data-field="percentual" value="${Number(pagamento.percentual || 0).toFixed(0)}">
+          <label for="${prefix}-percent">%</label>
+          <input type="number" id="${prefix}-percent" min="0" max="100" step="1" class="payment-input" data-field="percentual" value="${Number(pagamento.percentual || 0).toFixed(0)}">
         </div>
         <div class="payment-field payment-status">
-          <label>Status</label>
-          <select class="payment-input" data-field="status">
+          <label for="${prefix}-status">Status</label>
+          <select id="${prefix}-status" class="payment-input" data-field="status">
             <option value="pendente" ${pagamento.status === 'pendente' ? 'selected' : ''}>Pendente</option>
-            <option value="aguardando" ${pagamento.status === 'aguardando' ? 'selected' : ''}>Aguardando</option>
+            <option value="aguardando" ${pagamento.status === 'aguardando' ? 'selected' : ''}>Aguardando etapa</option>
             <option value="pago" ${pagamento.status === 'pago' ? 'selected' : ''}>Pago</option>
           </select>
         </div>
         <div class="payment-field payment-date">
-          <label>Vencimento</label>
-          <input type="text" class="payment-input" data-field="dataVencimento" value="${escapeHtml(pagamento.dataVencimento || '')}" placeholder="DD-MM-AAAA">
+          <label for="${prefix}-due">Data prevista</label>
+          <input type="text" id="${prefix}-due" class="payment-input" data-field="dataVencimento" value="${escapeHtml(pagamento.dataVencimento || '')}" placeholder="DD-MM-AAAA" pattern="\\d{2}-\\d{2}-\\d{4}">
         </div>
-        <button type="button" class="btn btn-secondary btn-remove-payment" data-index="${index}" title="Remover parcela">
+        <div class="payment-field payment-date-paid">
+          <label for="${prefix}-paid">Data paga</label>
+          <input type="text" id="${prefix}-paid" class="payment-input" data-field="dataPagamento" value="${escapeHtml(pagamento.dataPagamento || '')}" placeholder="DD-MM-AAAA" pattern="\\d{2}-\\d{2}-\\d{4}">
+        </div>
+        <div class="payment-field payment-task">
+          <label for="${prefix}-task">Etapa relacionada</label>
+          <select id="${prefix}-task" class="payment-input" data-field="tarefaId">
+            <option value="">Sem etapa vinculada</option>
+            ${tarefas.map(tarefa => `<option value="${escapeHtml(tarefa.id)}" ${pagamento.tarefaId === tarefa.id ? 'selected' : ''}>${escapeHtml(tarefa.descricao_etapa)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="payment-field payment-observation">
+          <label for="${prefix}-note">Observação</label>
+          <input type="text" id="${prefix}-note" class="payment-input" data-field="observacao" value="${escapeHtml(pagamento.observacao || '')}" placeholder="Opcional">
+        </div>
+        <button type="button" class="btn btn-secondary btn-remove-payment" data-index="${index}" title="Remover parcela" aria-label="Remover ${escapeHtml(pagamento.nome)}">
           <i data-lucide="trash-2"></i>
         </button>
       </div>
-    `).join('')
+    `;
+    }).join('')
     : '<div class="payment-empty">Nenhuma parcela cadastrada. Adicione a primeira etapa de pagamento.</div>';
 
   const summaryBox = document.getElementById('payment-summary');
   if (summaryBox) {
+    const proximo = summary.proximo
+      ? `<strong>${escapeHtml(summary.proximo.nome)}</strong> · ${escapeHtml(summary.proximo.dataVencimento)} · R$ ${formatCurrency(summary.proximo.valor)}`
+      : 'Não definido';
     summaryBox.innerHTML = `
       <span>Total: <strong>R$ ${formatCurrency(summary.total)}</strong></span>
       <span>Pago: <strong>R$ ${formatCurrency(summary.pagos)}</strong></span>
       <span>Pendente: <strong>R$ ${formatCurrency(summary.pendentes)}</strong></span>
       <span>Progresso: <strong>${Math.round(summary.percentual)}%</strong></span>
+      <span class="payment-next">Próximo pagamento: ${proximo}</span>
     `;
+  }
+
+  const historyBox = document.getElementById('payment-history');
+  if (historyBox) {
+    historyBox.innerHTML = summary.historico.length
+      ? `<h4>Pagamentos realizados</h4><ul>${summary.historico.map(pagamento => `
+          <li>
+            <span><strong>${escapeHtml(pagamento.nome)}</strong>${pagamento.dataPagamento ? ` · ${escapeHtml(pagamento.dataPagamento)}` : ''}</span>
+            <strong>R$ ${formatCurrency(pagamento.valor)}</strong>
+          </li>
+        `).join('')}</ul>`
+      : '';
   }
 
   document.querySelectorAll('.btn-remove-payment').forEach(button => {
     button.addEventListener('click', () => {
       const index = Number(button.dataset.index || 0);
-      const current = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+      const current = collectPaymentRowsFromDOM();
       current.splice(index, 1);
       AppState.projectInfo.pagamentos = current;
       renderPaymentList();
@@ -430,22 +477,62 @@ function renderPaymentList() {
 }
 
 function addPaymentRow() {
-  const pagamentos = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+  const pagamentos = collectPaymentRowsFromDOM();
   pagamentos.push({
-    id: `pagamento-${Date.now()}`,
+    id: generateUUID(),
     nome: `Pagamento ${pagamentos.length + 1}`,
     valor: 0,
     percentual: 0,
     status: 'pendente',
     dataVencimento: '',
+    dataPagamento: '',
+    tarefaId: '',
     observacao: ''
   });
   AppState.projectInfo.pagamentos = pagamentos;
   renderPaymentList();
 }
 
+function renderPaymentOverview() {
+  const container = document.getElementById('payment-overview-summary');
+  if (!container) return;
+
+  const pagamentos = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+  const summary = getPaymentSummary(pagamentos);
+  const metrics = [
+    ['Valor total', summary.total],
+    ['Pago', summary.pagos],
+    ['Pendente', summary.pendentes]
+  ];
+
+  container.innerHTML = metrics.map(([label, value]) => `
+    <div class="payment-overview-item">
+      <span>${label}</span>
+      <strong>${pagamentos.length ? `R$ ${formatCurrency(value)}` : '—'}</strong>
+    </div>
+  `).join('');
+
+  const nextElement = document.getElementById('payment-overview-next');
+  if (!nextElement) return;
+
+  if (!summary.parcelas || !pagamentos.some(item => item.status !== 'pago')) {
+    nextElement.textContent = summary.parcelas ? 'Todas as parcelas estão pagas' : 'Próximo pagamento não definido';
+    return;
+  }
+
+  if (!summary.proximo) {
+    nextElement.textContent = 'Próximo pagamento: informe uma data prevista';
+    return;
+  }
+
+  const tarefa = AppState.tasks.find(item => item.id === summary.proximo.tarefaId);
+  const etapa = tarefa ? ` · ${tarefa.descricao_etapa}` : '';
+  nextElement.textContent = `Próximo: ${summary.proximo.nome} · ${summary.proximo.dataVencimento} · R$ ${formatCurrency(summary.proximo.valor)}${etapa}`;
+}
+
 function collectPaymentRowsFromDOM() {
   const rows = document.querySelectorAll('.payment-row');
+  const existentes = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
   return Array.from(rows).map((row, index) => {
     const inputs = row.querySelectorAll('[data-field]');
     const payload = {};
@@ -457,12 +544,14 @@ function collectPaymentRowsFromDOM() {
     });
 
     return {
-      id: `pagamento-${Date.now()}-${index}`,
+      id: row.dataset.paymentId || existentes[index]?.id || generateUUID(),
       nome: String(payload.nome || `Pagamento ${index + 1}`).trim() || `Pagamento ${index + 1}`,
       valor: Number(payload.valor || 0),
       percentual: Number(payload.percentual || 0),
       status: ['pago', 'pendente', 'aguardando'].includes(payload.status) ? payload.status : 'pendente',
       dataVencimento: payload.dataVencimento || '',
+      dataPagamento: payload.dataPagamento || '',
+      tarefaId: payload.tarefaId || '',
       observacao: payload.observacao || ''
     };
   });
@@ -704,15 +793,18 @@ function renderKanban(filteredTasks) {
  */
 function buildKanbanCard(task) {
   const status = calculateStatus(task.porcentagem);
+  const statusKey = status === 'Finalizado' ? 'completed' : status === 'Em Andamento' ? 'in-progress' : 'not-started';
+  const statusIcon = status === 'Finalizado' ? 'check-circle-2' : status === 'Em Andamento' ? 'clock-3' : 'circle';
   const days = getDaysRemaining(task.data_conclusao);
   const isCritical = status !== 'Finalizado' && days <= 7;
   const progressColor = getProgressColor(task.porcentagem);
   const discKey = getDisciplinaKey(task.disciplina_projeto);
 
-  const card = document.createElement('div');
+  const card = document.createElement('article');
   card.className = `kanban-card ${isCritical ? 'card-critical' : ''}`;
   card.draggable = true;
   card.dataset.taskId = task.id;
+  card.setAttribute('aria-label', `${task.descricao_etapa}, ${status}, ${task.porcentagem}%, prazo ${task.data_conclusao}`);
 
   card.addEventListener('dragstart', (e) => {
     AppState.draggedTaskId = task.id;
@@ -729,12 +821,18 @@ function buildKanbanCard(task) {
   card.innerHTML = `
     <div class="card-top-row">
       <span class="badge-disciplina badge-${discKey}">${escapeHTML(task.disciplina_projeto)}</span>
+      <div class="card-state-group">
+        <span class="card-status status-${statusKey}">
+          <i data-lucide="${statusIcon}"></i>
+          ${escapeHTML(status)}
+        </span>
       ${isCritical ? `
         <span class="card-alert-badge" title="Prazo crítico: ${days < 0 ? 'Vencida há ' + Math.abs(days) + ' dias' : 'Vence em ' + days + ' dias'}">
           <i data-lucide="alert-circle"></i>
           ${days < 0 ? 'Atrasada' : days + 'd'}
         </span>
       ` : ''}
+      </div>
     </div>
 
     <div class="card-title">${escapeHTML(task.descricao_etapa)}</div>
@@ -755,19 +853,19 @@ function buildKanbanCard(task) {
         <span>Progresso</span>
         <span style="color: ${progressColor}">${task.porcentagem}%</span>
       </div>
-      <div class="custom-progress-track">
+      <div class="custom-progress-track" role="progressbar" aria-label="Progresso de ${escapeHTML(task.descricao_etapa)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Number(task.porcentagem) || 0}">
         <div class="custom-progress-bar" style="width: ${task.porcentagem}%; background-color: ${progressColor};"></div>
       </div>
     </div>
 
     <div class="card-footer-actions">
-      <button class="btn-card-action" onclick="quickEditPercent('${task.id}')" title="Ajustar Porcentagem">
+      <button type="button" class="btn-card-action" onclick="quickEditPercent('${task.id}')" title="Ajustar Porcentagem" aria-label="Ajustar progresso de ${escapeHTML(task.descricao_etapa)}">
         <i data-lucide="percent"></i>
       </button>
-      <button class="btn-card-action" onclick="openEditModal('${task.id}')" title="Editar Tarefa">
+      <button type="button" class="btn-card-action" onclick="openEditModal('${task.id}')" title="Editar Tarefa" aria-label="Editar ${escapeHTML(task.descricao_etapa)}">
         <i data-lucide="edit-3"></i>
       </button>
-      <button class="btn-card-action danger" onclick="deleteTask('${task.id}')" title="Excluir Tarefa">
+      <button type="button" class="btn-card-action danger" onclick="deleteTask('${task.id}')" title="Excluir Tarefa" aria-label="Excluir ${escapeHTML(task.descricao_etapa)}">
         <i data-lucide="trash-2"></i>
       </button>
     </div>
@@ -840,6 +938,7 @@ function renderDataGrid(filteredTasks) {
                  value="${escapeHTML(task.data_conclusao)}" 
                  data-task-id="${task.id}" 
                  placeholder="DD-MM-YYYY"
+                 aria-label="Prazo de ${escapeHTML(task.descricao_etapa)}"
                  title="Edite a data e pressione Enter">
           ${isCritical ? `
             <i data-lucide="alert-triangle" class="text-danger" style="width: 14px; height: 14px;" title="Prazo Crítico: ${days <= 0 ? 'Atrasada' : days + ' dias'}"></i>
@@ -865,6 +964,7 @@ function renderDataGrid(filteredTasks) {
                  class="percent-input-inline" 
                  value="${task.porcentagem}" 
                  data-task-id="${task.id}"
+               aria-label="Progresso de ${escapeHTML(task.descricao_etapa)}"
                  title="Altere o valor para atualizar o status automaticamente">
           <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">%</span>
         </div>
@@ -880,10 +980,10 @@ function renderDataGrid(filteredTasks) {
       <!-- 8. Ações -->
       <td>
         <div class="actions-cell">
-          <button class="btn-card-action" onclick="openEditModal('${task.id}')" title="Editar Tarefa Completa">
+          <button type="button" class="btn-card-action" onclick="openEditModal('${task.id}')" title="Editar Tarefa Completa" aria-label="Editar ${escapeHTML(task.descricao_etapa)}">
             <i data-lucide="edit"></i>
           </button>
-          <button class="btn-card-action danger" onclick="deleteTask('${task.id}')" title="Excluir Tarefa">
+          <button type="button" class="btn-card-action danger" onclick="deleteTask('${task.id}')" title="Excluir Tarefa" aria-label="Excluir ${escapeHTML(task.descricao_etapa)}">
             <i data-lucide="trash-2"></i>
           </button>
         </div>
@@ -950,6 +1050,7 @@ function renderApp() {
 
   // Atualiza KPIs
   updateKPIs();
+  renderPaymentOverview();
 
   // Renderiza a visão ativa
   if (AppState.currentView === 'kanban') {
@@ -1124,8 +1225,7 @@ function openNewTaskModal() {
   syncModalPercent(0);
 
   const modal = document.getElementById('task-modal');
-  modal.classList.add('open');
-  document.getElementById('form-descricao').focus();
+  openDialog(modal, '#form-descricao');
 }
 
 window.openEditModal = function(taskId) {
@@ -1142,12 +1242,12 @@ window.openEditModal = function(taskId) {
   syncModalPercent(task.porcentagem);
 
   const modal = document.getElementById('task-modal');
-  modal.classList.add('open');
+  openDialog(modal, '#btn-close-modal');
 };
 
 function closeModal() {
   const modal = document.getElementById('task-modal');
-  modal.classList.remove('open');
+  closeDialog(modal);
 }
 
 function syncModalPercent(val) {
@@ -1240,10 +1340,72 @@ function toggleTheme() {
   showToast(`Tema alterado para ${next === 'dark' ? 'Escuro' : 'Claro'}`);
 }
 
+const modalFocusReturn = new WeakMap();
+
+function openDialog(modal, initialFocusSelector) {
+  if (!modal) return;
+  if (!modal.classList.contains('open')) modalFocusReturn.set(modal, document.activeElement);
+  modal.classList.add('open');
+
+  const target = modal.querySelector(initialFocusSelector || '.btn-close') || modal.querySelector('[role="dialog"]');
+  if (target) target.focus({ preventScroll: true });
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeDialog(modal) {
+  if (!modal || !modal.classList.contains('open')) return;
+  modal.classList.remove('open');
+
+  const returnFocus = modalFocusReturn.get(modal);
+  if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
+  modalFocusReturn.delete(modal);
+}
+
+function getOpenDialog() {
+  return [...document.querySelectorAll('.modal-overlay.open')].pop() || null;
+}
+
+function keepFocusInsideDialog(event, modal) {
+  const focusable = [...modal.querySelectorAll(
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )].filter(element => {
+    const style = getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden';
+  });
+
+  if (!focusable.length) {
+    event.preventDefault();
+    modal.querySelector('[role="dialog"]')?.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 /**
  * 16. INICIALIZAÇÃO DE EVENT LISTENERS GLOBAIS
  */
 function initEventListeners() {
+  document.addEventListener('keydown', event => {
+    const modal = getOpenDialog();
+    if (!modal) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeDialog(modal);
+    } else if (event.key === 'Tab') {
+      keepFocusInsideDialog(event, modal);
+    }
+  });
+
   // 1. Tema
   const btnTheme = document.getElementById('btn-theme-toggle');
   if (btnTheme) btnTheme.addEventListener('click', toggleTheme);
@@ -1394,14 +1556,17 @@ function initEventListeners() {
   const btnEditProject = document.getElementById('btn-edit-project');
   if (btnEditProject) btnEditProject.addEventListener('click', openProjectModal);
 
+  const btnManagePayments = document.getElementById('btn-manage-payments');
+  if (btnManagePayments) btnManagePayments.addEventListener('click', openProjectModal);
+
   const btnQuickEdit = document.getElementById('btn-quick-edit-project');
   if (btnQuickEdit) btnQuickEdit.addEventListener('click', openProjectModal);
 
   const btnCloseProjectModal = document.getElementById('btn-close-project-modal');
-  if (btnCloseProjectModal) btnCloseProjectModal.addEventListener('click', closeProjectModal);
+  if (btnCloseProjectModal) btnCloseProjectModal.addEventListener('click', () => closeProjectModal(true));
 
   const btnCancelProjectModal = document.getElementById('btn-cancel-project-modal');
-  if (btnCancelProjectModal) btnCancelProjectModal.addEventListener('click', closeProjectModal);
+  if (btnCancelProjectModal) btnCancelProjectModal.addEventListener('click', () => closeProjectModal(true));
 
   const formProjectInfo = document.getElementById('form-project-info');
   if (formProjectInfo) formProjectInfo.addEventListener('submit', saveProjectFromModal);
@@ -1420,6 +1585,8 @@ function initEventListeners() {
       document.getElementById('form-proj-areaterreno').value = '';
       document.getElementById('form-proj-inicio').value = '';
       document.getElementById('form-proj-fim').value = '';
+      AppState.projectInfo.pagamentos = [];
+      renderPaymentList();
       showToast('Campos limpos para preenchimento de nova obra!');
     });
   }
@@ -1439,6 +1606,8 @@ function initEventListeners() {
       document.getElementById('form-proj-areaterreno').value = p.areaTerreno;
       document.getElementById('form-proj-inicio').value = p.dataInicio;
       document.getElementById('form-proj-fim').value = p.previsaoConclusao;
+      AppState.projectInfo.pagamentos = normalizePagamentos(p.pagamentos);
+      renderPaymentList();
       showToast('Dados de exemplo preenchidos no formulário!');
     });
   }
@@ -1476,6 +1645,7 @@ function showAutoSaveIndicator() {
  */
 function openProjectModal() {
   const p = AppState.projectInfo;
+  projectPaymentsBeforeEdit = normalizePagamentos(p.pagamentos).map(item => ({ ...item }));
   
   const fNome = document.getElementById('form-proj-nome');
   if (fNome) fNome.value = p.nomeObra || '';
@@ -1510,13 +1680,18 @@ function openProjectModal() {
   renderPaymentList();
 
   const modal = document.getElementById('project-modal');
-  if (modal) modal.classList.add('open');
-  if (window.lucide) lucide.createIcons();
+  openDialog(modal, '#btn-close-project-modal');
 }
 
-function closeProjectModal() {
+function closeProjectModal(discard = false) {
+  if (discard && projectPaymentsBeforeEdit) {
+    AppState.projectInfo.pagamentos = projectPaymentsBeforeEdit;
+    renderPaymentList();
+    renderPaymentOverview();
+  }
+  projectPaymentsBeforeEdit = null;
   const modal = document.getElementById('project-modal');
-  if (modal) modal.classList.remove('open');
+  closeDialog(modal);
 }
 
 function saveProjectFromModal(e) {
@@ -1552,6 +1727,8 @@ function saveProjectFromModal(e) {
   saveProjectInfo();
   renderProjectInfo();
   renderPaymentList();
+  renderPaymentOverview();
+  projectPaymentsBeforeEdit = null;
   closeProjectModal();
   showToast('Ficha técnica da obra atualizada com sucesso!');
 
@@ -1564,17 +1741,63 @@ function saveProjectFromModal(e) {
 function openReportModal() {
   populateReportData();
   const modal = document.getElementById('report-modal');
-  if (modal) modal.classList.add('open');
-  if (window.lucide) lucide.createIcons();
+  openDialog(modal, '#btn-close-report');
 }
 
 function closeReportModal() {
   const modal = document.getElementById('report-modal');
-  if (modal) modal.classList.remove('open');
+  closeDialog(modal);
+}
+
+function renderPaymentReport() {
+  const pagamentos = normalizePagamentos(AppState.projectInfo?.pagamentos || []);
+  const summary = getPaymentSummary(pagamentos);
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  };
+
+  setText('report-finance-total', pagamentos.length ? `R$ ${formatCurrency(summary.total)}` : '—');
+  setText('report-finance-paid', pagamentos.length ? `R$ ${formatCurrency(summary.pagos)}` : '—');
+  setText('report-finance-pending', pagamentos.length ? `R$ ${formatCurrency(summary.pendentes)}` : '—');
+
+  if (summary.proximo) {
+    const tarefa = AppState.tasks.find(item => item.id === summary.proximo.tarefaId);
+    const etapa = tarefa ? ` · etapa: ${tarefa.descricao_etapa}` : '';
+    setText('report-finance-next', `Próximo pagamento: ${summary.proximo.nome} · ${summary.proximo.dataVencimento} · R$ ${formatCurrency(summary.proximo.valor)}${etapa}`);
+  } else {
+    setText('report-finance-next', summary.parcelas && summary.pendentes > 0
+      ? 'Há parcelas pendentes sem data prevista.'
+      : 'Próximo pagamento não definido.');
+  }
+
+  const tbody = document.getElementById('report-payment-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = pagamentos.length
+    ? pagamentos.map(pagamento => {
+      const tarefa = AppState.tasks.find(item => item.id === pagamento.tarefaId);
+      const status = pagamento.status === 'pago'
+        ? 'Pago'
+        : pagamento.status === 'aguardando'
+          ? 'Aguardando etapa'
+          : 'Pendente';
+
+      return `
+        <tr>
+          <td>${escapeHTML(pagamento.nome)}</td>
+          <td>${escapeHTML(pagamento.dataVencimento || '—')}</td>
+          <td>${escapeHTML(pagamento.dataPagamento || '—')}</td>
+          <td>${escapeHTML(tarefa?.descricao_etapa || '—')}</td>
+          <td>${status}</td>
+          <td>R$ ${formatCurrency(pagamento.valor)}</td>
+        </tr>
+      `;
+    }).join('')
+    : '<tr><td colspan="6">Nenhuma parcela cadastrada.</td></tr>';
 }
 
 function populateReportData() {
-  // Fase atual e parecer técnico, ambos calculados a partir das etapas reais
   if (typeof renderRelatorioCliente === 'function') {
     renderRelatorioCliente();
   }
@@ -1582,6 +1805,7 @@ function populateReportData() {
   const tasks = AppState.tasks;
   const totalTasks = tasks.length;
   const p = AppState.projectInfo;
+  renderPaymentReport();
 
   // Atualizar dados cadastrais no relatório
   const repObra = document.getElementById('rep-cad-obra');

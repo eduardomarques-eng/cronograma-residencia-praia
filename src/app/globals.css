@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+@media print {
+  .print-hidden,
+  aside,
+  header {
+    display: none !important;
+  }
+  body,
+  main {
+    background: white !important;
+  }
+  .print-report {
+    max-width: none !important;
+  }
+  .print-report section {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+}

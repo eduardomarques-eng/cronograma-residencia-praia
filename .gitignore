@@ -2,3 +2,7 @@
 !scripts/*.ps1
 .system_generated/
 *.log
+.next/
+tsconfig.tsbuildinfo
+node_modules/
+node_modules

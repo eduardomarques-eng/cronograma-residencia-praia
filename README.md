@@ -69,3 +69,57 @@ O briefing de entrevista com o cliente é uma aplicação separada, no
 repositório `briefing-arqvertice`.
 
 ArqVértice • Arquitetura, Estrutura & Engenharia
+# ArqVértice Flow
+
+## Aplicação moderna
+
+O Flow mantém o aplicativo legado em funcionamento e adiciona uma aplicação Next.js
+com TypeScript, Prisma e PostgreSQL. O modelo oficial do cronograma legado continua
+sendo a referência de ordenação, datas e progresso.
+
+### Desenvolvimento
+
+```bash
+npm install
+copy .env.example .env
+npm run dev
+```
+
+Defina `DATABASE_URL` e um `AUTH_SECRET` com pelo menos 32 caracteres. A autenticação
+usa sessões server-side, cookie `httpOnly` e os papéis `ADMIN` e `CLIENT`. Clientes
+só podem consultar projetos vinculados ao próprio registro.
+
+### Banco
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+npm run db:seed
+```
+
+O seed exige `SEED_ADMIN_PASSWORD` e `SEED_CLIENT_PASSWORD`; credenciais reais nunca
+devem ser commitadas. O PostgreSQL pode ser hospedado em Supabase, Neon ou Render.
+
+### Verificação
+
+```bash
+npm test
+npm run lint
+npm run typecheck
+npm run build
+```
+
+O workflow em `.github/workflows/ci.yml` executa essas verificações em pull requests
+e pushes para `main`. Na Vercel, configure as mesmas variáveis de ambiente e use
+`npm run build`; aplique migrations no banco antes de liberar a aplicação.
+
+### Estrutura
+
+- `src/app`: páginas, portal, relatório imprimível e rotas de autenticação.
+- `src/server/services`: regras de negócio e acesso ao Prisma.
+- `src/lib`: validações, finanças e adaptador de paridade do cronograma.
+- `prisma`: schema, migrations e seed.
+- arquivos na raiz e `api/`: legado preservado para compatibilidade.
+
+O botão de relatório usa a impressão do navegador, permitindo salvar como PDF com
+paginação e estilos específicos de impressão.
