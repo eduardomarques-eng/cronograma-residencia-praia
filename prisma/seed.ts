@@ -144,21 +144,34 @@ async function main() {
     },
   });
 
+  // Credenciais vêm SEMPRE do ambiente — nunca do código.
+  // Uma password em Source Control é pública para sempre, mesmo num repositório
+  // privado: qualquer pessoa com acesso, ou qualquer bot que varre GitHub, lê.
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
-  const clientPassword = process.env.SEED_CLIENT_PASSWORD;
-  if (!adminPassword || !clientPassword) {
-    throw new Error("Defina SEED_ADMIN_PASSWORD e SEED_CLIENT_PASSWORD antes de executar o seed.");
+  if (!adminPassword) {
+    throw new Error("Defina SEED_ADMIN_PASSWORD antes de executar o seed.");
   }
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? "admin@example.com").trim().toLowerCase();
+  const adminName = process.env.SEED_ADMIN_NAME?.trim() || "Administrador";
+
   await prisma.user.upsert({
-    where: { email: process.env.SEED_ADMIN_EMAIL ?? "admin@example.com" },
-    update: { name: "Administrador", passwordHash: hashPassword(adminPassword), role: "ADMIN" },
+    where: { email: adminEmail },
+    update: { name: adminName, passwordHash: hashPassword(adminPassword), role: "ADMIN" },
     create: {
-      name: "Administrador",
-      email: process.env.SEED_ADMIN_EMAIL ?? "admin@example.com",
+      name: adminName,
+      email: adminEmail,
       passwordHash: hashPassword(adminPassword),
       role: "ADMIN",
     },
   });
+
+  // O utilizador CLIENT é opcional: existem instalações em que só se quer o
+  // ADMIN. Exigir a senha do cliente bloqueava a criação da conta principal.
+  const clientPassword = process.env.SEED_CLIENT_PASSWORD;
+  if (!clientPassword) {
+    console.info("[seed] SEED_CLIENT_PASSWORD por definir — utilizador cliente não criado.");
+    return;
+  }
   const clientUser = await prisma.user.upsert({
     where: { email: process.env.SEED_CLIENT_EMAIL ?? client.email ?? "cliente@example.com" },
     update: { name: client.name, passwordHash: hashPassword(clientPassword), role: "CLIENT", clientId: client.id },
