@@ -83,10 +83,32 @@ que um storage com URLs privadas e autorização server-side seja integrado.
 
 ## Produção e recuperação
 
-O deploy previsto é Vercel + PostgreSQL compatível (Supabase, Neon ou Render).
-Configure backups e retenção no provedor escolhido e documente o procedimento
-de restauração antes do primeiro uso real. O repositório não executa backup,
-migração automática nem smoke test remoto por conta própria.
+O alvo recomendado é Vercel + Neon PostgreSQL. No Neon, crie um projeto
+separado para produção, mantenha a conexão com TLS e configure a
+`DATABASE_URL` no ambiente **Production** da Vercel. Não copie a URL de
+desenvolvimento para produção.
+
+Sequência de release:
+
+```bash
+npm ci
+npm run db:validate
+npm run db:generate
+npm run db:deploy
+npm run build
+```
+
+Execute `db:deploy` somente contra a URL de produção após confirmar um backup
+ou restore point no Neon. O comando é não destrutivo e aplica apenas migrations
+pendentes; não use `prisma db push` em produção.
+
+O Neon fornece restore points/branching conforme o plano contratado. Antes do
+primeiro release, confirme no painel a retenção disponível, o horário do último
+backup automático e quem pode restaurar. Para recuperação, crie uma branch ou
+restore point do instante anterior ao incidente, valide a aplicação nessa
+cópia e só então faça a troca controlada da `DATABASE_URL`. Registre data,
+responsável, ponto restaurado e resultado da validação. O repositório não
+executa backup, restauração ou troca de variáveis automaticamente.
 
 Após o deploy, valide login ADMIN e CLIENT, isolamento entre projetos,
 briefing por token, cronograma, pagamentos e relatórios liberados. Monitore
