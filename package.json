@@ -19,7 +19,8 @@
     "db:validate": "prisma validate",
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1146.0",
