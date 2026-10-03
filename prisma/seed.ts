@@ -101,8 +101,15 @@ const packageTemplates = [
   },
 ] as const;
 
+/** E-mail do cliente de demonstração criado pelo seed. */
+const DEMO_CLIENT_EMAIL = "demo@example.com";
+
 async function main() {
-  const existingClient = await prisma.client.findUnique({ where: { email: "demo@example.com" } });
+  // `Client.email` NÃO é @unique no schema — só `id` o é. Usar `findUnique`
+  // por email fazia o seed falhar em QUALQUER base de dados nova, com
+  // "where needs at least one of `id`". `findFirst` é o correcto para um campo
+  // indexado mas não único.
+  const existingClient = await prisma.client.findFirst({ where: { email: DEMO_CLIENT_EMAIL } });
   const client = existingClient ?? await prisma.client.create({
     data: {
       name: "Cliente de demonstração",
