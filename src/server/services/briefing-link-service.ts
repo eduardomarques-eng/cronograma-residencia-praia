@@ -51,7 +51,11 @@ export async function resolveBriefingToken(token: string) {
     where: { tokenHash: hashBriefingToken(token) },
     include: { briefing: { include: { project: { select: { id: true, name: true, client: { select: { name: true } } } } } } },
   });
-  if (!link || link.revokedAt) throw new DomainError("Este link de briefing foi revogado ou não existe.", "NOT_FOUND");
-  await prisma.briefingAccessLink.update({ where: { id: link.id }, data: { lastAccessAt: new Date() } });
+  if (!link || link.revokedAt || (link.expiresAt && link.expiresAt <= new Date())) throw new DomainError("Este link de briefing foi revogado, expirou ou não existe.", "NOT_FOUND");
+  const now = new Date();
+  await prisma.briefingAccessLink.update({
+    where: { id: link.id },
+    data: { lastAccessAt: now, firstAccessAt: link.firstAccessAt ?? now },
+  });
   return link;
 }

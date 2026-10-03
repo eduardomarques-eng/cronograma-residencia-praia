@@ -4,7 +4,8 @@ import { hashPassword } from "../src/lib/password";
 const prisma = new PrismaClient();
 
 async function main() {
-  const client = await prisma.client.create({
+  const existingClient = await prisma.client.findUnique({ where: { email: "demo@example.com" } });
+  const client = existingClient ?? await prisma.client.create({
     data: {
       name: "Cliente de demonstração",
       fullName: "Cliente de demonstração",
@@ -50,16 +51,20 @@ async function main() {
   if (!adminPassword || !clientPassword) {
     throw new Error("Defina SEED_ADMIN_PASSWORD e SEED_CLIENT_PASSWORD antes de executar o seed.");
   }
-  await prisma.user.create({
-    data: {
+  await prisma.user.upsert({
+    where: { email: process.env.SEED_ADMIN_EMAIL ?? "admin@example.com" },
+    update: { name: "Administrador", passwordHash: hashPassword(adminPassword), role: "ADMIN" },
+    create: {
       name: "Administrador",
       email: process.env.SEED_ADMIN_EMAIL ?? "admin@example.com",
       passwordHash: hashPassword(adminPassword),
       role: "ADMIN",
     },
   });
-  await prisma.user.create({
-    data: {
+  const clientUser = await prisma.user.upsert({
+    where: { email: process.env.SEED_CLIENT_EMAIL ?? client.email ?? "cliente@example.com" },
+    update: { name: client.name, passwordHash: hashPassword(clientPassword), role: "CLIENT", clientId: client.id },
+    create: {
       name: client.name,
       email: process.env.SEED_CLIENT_EMAIL ?? client.email ?? "cliente@example.com",
       passwordHash: hashPassword(clientPassword),
@@ -67,6 +72,25 @@ async function main() {
       clientId: client.id,
     },
   });
+  const project = await prisma.project.findFirst({ where: { clientId: client.id }, orderBy: { createdAt: "asc" } });
+  if (project) {
+    await prisma.projectAccess.upsert({
+      where: { projectId_userId: { projectId: project.id, userId: clientUser.id } },
+      update: {},
+      create: { projectId: project.id, userId: clientUser.id },
+    });
+    const report = await prisma.projectReport.findFirst({ where: { projectId: project.id }, orderBy: { createdAt: "asc" } });
+    if (report) {
+      await prisma.projectReport.update({
+        where: { id: report.id },
+        data: { title: "Relatório inicial", status: "RELEASED", releasedAt: new Date() },
+      });
+    } else {
+      await prisma.projectReport.create({
+        data: { projectId: project.id, title: "Relatório inicial", status: "RELEASED", releasedAt: new Date() },
+      });
+    }
+  }
   console.info(`Seed concluído para o cliente ${client.id}.`);
 }
 

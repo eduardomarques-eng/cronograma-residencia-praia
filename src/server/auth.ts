@@ -58,7 +58,16 @@ export async function requireProjectAccess(projectId: string) {
   const user = await currentUser();
   if (!user) throw new DomainError("É necessário entrar para continuar.", "NOT_FOUND");
   if (user.role === "ADMIN") return user;
-  const project = await prisma.project.findFirst({ where: { id: projectId, clientId: user.clientId ?? "__none__" }, select: { id: true } });
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      OR: [
+        { clientId: user.clientId ?? "__none__" },
+        { access: { some: { userId: user.id } } },
+      ],
+    },
+    select: { id: true },
+  });
   if (!project) throw new DomainError("Projeto não encontrado.", "NOT_FOUND");
   return user;
 }

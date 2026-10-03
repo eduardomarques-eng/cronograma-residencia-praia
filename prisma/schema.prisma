@@ -49,6 +49,16 @@ enum ProjectReportStatus {
   ARCHIVED
 }
 
+enum DocumentVisibility {
+  INTERNAL
+  CLIENT
+}
+
+enum DocumentStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
@@ -59,6 +69,7 @@ model User {
   client       Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   sessions     Session[]
   auditLogs    AuditLog[]
+  projectAccess ProjectAccess[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -127,6 +138,8 @@ model Project {
   payments       Payment[]
   briefing       Briefing?
   reports        ProjectReport[]
+  access         ProjectAccess[]
+  documents      ProjectDocument[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -134,16 +147,48 @@ model Project {
   @@index([status])
 }
 
+model ProjectAccess {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId, projectId])
+}
+
+model ProjectDocument {
+  id           String            @id @default(uuid()) @db.Uuid
+  projectId    String            @db.Uuid
+  name         String
+  storageUrl   String
+  mimeType     String?
+  sizeBytes    BigInt?
+  visibility   DocumentVisibility @default(INTERNAL)
+  status       DocumentStatus    @default(ACTIVE)
+  releasedAt   DateTime?
+  archivedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  project      Project           @relation(fields: [projectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([projectId, visibility, status])
+}
+
 model ProjectReport {
   id          String             @id @default(uuid()) @db.Uuid
   projectId   String             @db.Uuid
   title       String
+  version     Int                @default(1)
+  contentUrl  String?
   status      ProjectReportStatus @default(PREPARING)
   releasedAt  DateTime?
   archivedAt  DateTime?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
-  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([projectId, status])
 }
@@ -220,6 +265,8 @@ model BriefingAccessLink {
   briefingId  String   @db.Uuid
   tokenHash   String   @unique
   revokedAt   DateTime?
+  expiresAt   DateTime?
+  firstAccessAt DateTime?
   lastAccessAt DateTime?
   createdAt   DateTime @default(now())
   briefing    Briefing @relation(fields: [briefingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -253,4 +300,5 @@ model BriefingVisualOption {
   updatedAt   DateTime @updatedAt
 
   @@index([questionId, sortOrder])
+  @@unique([questionId, value])
 }
