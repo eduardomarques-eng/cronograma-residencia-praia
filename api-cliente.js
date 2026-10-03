@@ -8,8 +8,8 @@
  *   'nuvem' — banco respondendo. O servidor passa a ser a fonte da verdade e
  *             o localStorage vira apenas cache para abrir rapido e offline.
  *
- * Leitura e publica (o cliente da obra acompanha pelo link).
- * Escrita exige a chave de administrador, guardada so neste navegador.
+ * Leitura e escrita exigem a chave de administrador, guardada so neste
+ * navegador. O portal moderno usa as rotas autenticadas de Next.js.
  * ============================================================================
  */
 
@@ -76,7 +76,7 @@ const Remoto = {
       if (!resp.ok) return 'local';
 
       const s = await resp.json();
-      if (s.databaseUrlConfigurada && s.esquemaAplicado && s.banco === 'conectado') {
+      if (s.databaseUrlConfigurada && s.esquemaAplicado && s.banco === 'conectado' && this.chave) {
         this.modo = 'nuvem';
       } else {
         this.modo = 'local';
@@ -184,6 +184,8 @@ const Remoto = {
         method: 'PUT',
         body: JSON.stringify({ nomeObra: AppState.projectInfo.nomeObra })
       });
+      this.modo = 'nuvem';
+      await this.carregar();
       showToast('Chave aceita. Suas edições agora vão para a nuvem.');
     } catch (e) {
       showToast(e.status === 401 ? 'Chave recusada pelo servidor.' : `Não foi possível validar: ${e.message}`);

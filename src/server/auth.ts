@@ -77,3 +77,60 @@ export async function requirePageProjectAccess(projectId: string) {
   if (!user) redirect(`/login?next=/portal/${encodeURIComponent(projectId)}`);
   return requireProjectAccess(projectId);
 }
+
+/**
+ * Tópico 35 — autorização de proposta derivada do BANCO, nunca do identificador
+ * enviado pelo frontend.
+ *
+ * O `proposalId` chega da requisição e por si só não prova nada: a função
+ * percorre `Proposal → Project → Client` e só então compara com o usuário
+ * autenticado. Se o ID não pertence ao cliente, a resposta é idêntica à de um
+ * recurso inexistente, para não revelar a existência de dados de terceiros.
+ */
+export async function requireProposalAccess(proposalId: string) {
+  const user = await currentUser();
+  if (!user) throw new DomainError("É necessário entrar para continuar.", "NOT_FOUND");
+  if (user.role === "ADMIN") return user;
+  const proposal = await prisma.proposal.findFirst({
+    where: {
+      id: proposalId,
+      project: {
+        OR: [
+          { clientId: user.clientId ?? "__none__" },
+          { access: { some: { userId: user.id } } },
+        ],
+      },
+    },
+    select: { id: true },
+  });
+  if (!proposal) throw new DomainError("Proposta não encontrada.", "NOT_FOUND");
+  return user;
+}
+
+/**
+ * Tópico 35 — mesma garantia para o contrato. O contrato nunca é diretamente
+ * acessível ao cliente pelo ID: ele é alcançado pela proposta aprovada que o
+ * originou, o que mantém a cadeia cliente → projeto → proposta → contrato.
+ */
+export async function requireContractAccess(contractId: string) {
+  const user = await currentUser();
+  if (!user) throw new DomainError("É necessário entrar para continuar.", "NOT_FOUND");
+  if (user.role === "ADMIN") return user;
+  const contract = await prisma.contract.findFirst({
+    where: {
+      id: contractId,
+      proposal: {
+        project: {
+          OR: [
+            { clientId: user.clientId ?? "__none__" },
+            { access: { some: { userId: user.id } } },
+          ],
+        },
+      },
+    },
+    select: { id: true },
+  });
+  if (!contract) throw new DomainError("Contrato não encontrado.", "NOT_FOUND");
+  return user;
+}
+

@@ -14,11 +14,17 @@ export default defineConfig([
         process: "readonly",
         HTMLButtonElement: "readonly",
         Request: "readonly",
+        Response: "readonly",
+        Headers: "readonly",
+        URL: "readonly",
         FormData: "readonly",
         fetch: "readonly",
         window: "readonly",
         Buffer: "readonly",
         console: "readonly",
+        setTimeout: "readonly",
+        // Globais da Web Crypto, disponíveis no runtime do Next.js (Node e edge).
+        crypto: "readonly",
       },
     },
     rules: {

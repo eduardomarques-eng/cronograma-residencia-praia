@@ -77,7 +77,7 @@ O deploy produtivo é manual e auditável pelo workflow
 
 O workflow valida o schema, aplica somente migrations pendentes, constrói e
 publica o Next.js na Vercel e executa `npm run smoke:remote`. O smoke test
-verifica `/login` e garante que um token de briefing inválido não abre o
+verifica `/login`, `/api/health` e garante que um token de briefing inválido não abre o
 formulário. Ele não substitui testes autenticados com fixtures de staging.
 Execute o workflow pela aba **Actions > Deploy production > Run workflow** e
 confirme os logs, URL, banco e variáveis da Vercel antes de anunciar a versão.
@@ -126,6 +126,14 @@ configurado; o endpoint de download valida a sessão, o projeto e a
 visibilidade antes de buscar o objeto. Não forneça URLs públicas do bucket.
 Uploads aceitam PDF, PNG, JPG e TXT até 10 MB.
 
+As APIs legadas em `api/projeto.js` e `api/tarefas.js` não fazem parte do
+portal moderno e agora exigem `x-chave-admin` também para leitura. Sem essa
+chave, elas respondem `401` e não consultam o banco. O cliente legado só entra
+no modo remoto quando a chave foi informada; o portal moderno deve usar as
+rotas autenticadas do Next.js. Para PostgreSQL remoto, a conexão legada exige
+TLS com validação de certificado; se o provedor usar uma CA privada, configure
+`DATABASE_SSL_CA` sem desativar `rejectUnauthorized`.
+
 ## Produção e recuperação
 
 O alvo recomendado é Vercel + Neon PostgreSQL. No Neon, crie um projeto
@@ -159,6 +167,29 @@ Após o deploy, valide login ADMIN e CLIENT, isolamento entre projetos,
 briefing por token, cronograma, pagamentos e relatórios liberados. Monitore
 falhas de autenticação, banco, geração de relatório e runtime sem registrar
 tokens ou senhas.
+
+## Atualização controlada e observabilidade
+
+As dependências de runtime permanecem nas linhas compatíveis com a aplicação:
+Next.js `15.5.x` e Prisma `6.19.x`. A atualização desta etapa foi limitada aos
+patches `15.5.27` e `6.19.3`; não foi feito upgrade major para Next 16 ou
+Prisma 7/8, pois isso exigiria uma janela própria para migração e validação.
+Playwright e PostCSS também receberam apenas atualizações não-major para manter
+os testes e corrigir avisos de segurança conhecidos.
+
+O endpoint `GET /api/health` verifica a conectividade com o PostgreSQL e retorna
+`200` quando o serviço está saudável ou `503` quando o banco está indisponível.
+Ele não expõe a URL do banco, credenciais ou dados do negócio. Cada resposta
+possui `X-Request-Id`; o mesmo identificador é incluído nos logs JSON de falha
+de login, download e health check. O identificador pode ser definido por um
+proxy confiável via `x-request-id` e é limitado a 128 caracteres.
+
+Em produção, encaminhe stdout/stderr da Vercel para o provedor de logs adotado
+e alerte para respostas `503` de `/api/health`, falhas de login e erros de
+download. Não envie tokens de briefing, cookies, senhas ou conteúdo de
+documentos aos logs. `APP_VERSION` pode identificar releases fora da Vercel;
+em deploy Vercel, `VERCEL_GIT_COMMIT_SHA` é usado automaticamente quando
+disponível.
 
 ## Estrutura
 

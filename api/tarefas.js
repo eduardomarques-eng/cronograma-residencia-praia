@@ -2,7 +2,7 @@
  * ============================================================================
  * /api/tarefas — etapas do cronograma
  *
- *   GET    /api/tarefas          lista todas (publico)
+ *   GET    /api/tarefas          lista todas (exige x-chave-admin)
  *   POST   /api/tarefas          cria           (exige x-chave-admin)
  *   PUT    /api/tarefas?id=UUID  atualiza       (exige x-chave-admin)
  *   DELETE /api/tarefas?id=UUID  remove         (exige x-chave-admin)
@@ -78,6 +78,9 @@ function validar(corpo, exigirTudo) {
 module.exports = async function handler(req, res) {
   try {
     if (req.method === 'GET') {
+      if (!escritaAutorizada(req)) {
+        return json(res, 401, { erro: 'Chave de administrador ausente ou invalida' });
+      }
       const r = await query(
         'SELECT id, descricao_etapa, disciplina_projeto, projetista, data_conclusao, porcentagem, ordem FROM tarefas ORDER BY ordem, data_conclusao'
       );

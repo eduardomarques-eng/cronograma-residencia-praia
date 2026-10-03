@@ -6,6 +6,9 @@ const links = [
   ["Clientes", "/clientes"],
   ["Projetos", "/projetos"],
   ["Briefings", "/admin/briefing"],
+  ["Propostas", "/propostas"],
+  ["Mensagens", "/admin/mensagens"],
+  ["Serviços", "/admin/servicos"],
 ];
 
 export function AppShell({ children, eyebrow = "Estúdio", environment = "admin" }: { children: ReactNode; eyebrow?: string; environment?: "admin" | "client" }) {

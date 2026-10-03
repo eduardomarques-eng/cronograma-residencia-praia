@@ -2,7 +2,7 @@
  * ============================================================================
  * /api/projeto — ficha tecnica da obra (linha unica)
  *
- *   GET /api/projeto   le      (publico)
+ *   GET /api/projeto   le      (exige x-chave-admin)
  *   PUT /api/projeto   grava   (exige x-chave-admin)
  * ============================================================================
  */
@@ -47,6 +47,9 @@ function paraJSON(linha) {
 module.exports = async function handler(req, res) {
   try {
     if (req.method === 'GET') {
+      if (!escritaAutorizada(req)) {
+        return json(res, 401, { erro: 'Chave de administrador ausente ou invalida' });
+      }
       const r = await query('SELECT * FROM projeto WHERE id = 1');
       if (!r.rowCount) return json(res, 200, { projeto: null });
       return json(res, 200, { projeto: paraJSON(r.rows[0]) });

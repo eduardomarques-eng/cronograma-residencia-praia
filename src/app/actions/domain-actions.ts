@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient, updateClient } from "@/server/services/client-service";
 import { createProject, updateProject } from "@/server/services/project-service";
 import { createScheduleStage, updateScheduleStage } from "@/server/services/schedule-service";
@@ -13,6 +14,20 @@ import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@
 import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
 import { updateReportVisibility } from "@/server/services/report-visibility-service";
 import { archiveProjectDocument, uploadProjectDocument } from "@/server/services/document-service";
+import { createProposal, createProposalLink, decideProposal, generateContract, listProposals, saveProposalVersion, sendProposalWhatsApp } from "@/server/services/proposal-service";
+import { listContractTemplates, listMessageTemplates, updateContractTemplate, updateMessageTemplate } from "@/server/services/message-template-service";
+import { listNotificationEvents } from "@/server/services/notification-service";
+import {
+  listCommercialPackages,
+  listServiceCatalog,
+  replacePackageItems,
+  updateServiceItem,
+} from "@/server/services/service-catalog-service";
+import { advanceSignatureStatus, requestContractSignature } from "@/server/services/signature-service";
+import { convertApprovedProposal, getConversionReadiness } from "@/server/services/conversion-service";
+import { listAuditTrail } from "@/server/audit";
+import { resolveClientKey } from "@/lib/proposal-access";
+import type { SignatureStatusName } from "@/lib/signature";
 
 export async function saveClientAction(input: unknown) {
   await requireRole("ADMIN");
@@ -90,10 +105,15 @@ export async function reopenBriefingAction(projectId: string) {
 }
 
 export async function saveBriefingVisualOptionAction(input: Parameters<typeof saveVisualOption>[0]) {
+  // Tópico 35 — o formulário público do briefing também é CLIENT; estas opções
+  // são configuração editorial do ADMIN e não podem ser alteradas por qualquer
+  // usuário autenticado.
+  await requireRole("ADMIN");
   return saveVisualOption(input);
 }
 
 export async function removeBriefingVisualOptionAction(id: string) {
+  await requireRole("ADMIN");
   return removeVisualOption(id);
 }
 
@@ -144,3 +164,142 @@ export async function archiveProjectDocumentAction(projectId: string, documentId
   revalidatePath(`/portal/${projectId}`);
   return result;
 }
+
+export async function createProposalAction(projectId: string) {
+  const result = await createProposal(projectId);
+  revalidatePath("/propostas");
+  revalidatePath(`/projetos/${projectId}`);
+  return result;
+}
+
+export async function createProposalLinkAction(proposalId: string) {
+  const result = await createProposalLink(proposalId);
+  revalidatePath("/propostas");
+  return result;
+}
+
+export async function saveProposalVersionAction(proposalId: string, input: Parameters<typeof saveProposalVersion>[1]) {
+  const result = await saveProposalVersion(proposalId, input);
+  revalidatePath("/propostas");
+  return result;
+}
+
+export async function listProposalsAction() {
+  return listProposals();
+}
+
+export async function decideProposalTokenAction(token: string, decision: "APPROVED" | "REJECTED") {
+  // Tópico 23: registra as evidências técnicas disponíveis no momento da decisão.
+  const requestHeaders = await headers();
+  const ip =
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    requestHeaders.get("x-real-ip") ??
+    null;
+  // Tópico 35: a origem é obrigatória. Sem ela a aprovação do cliente ficaria
+  // sem rate limit — o bypass que esta alteração corrige.
+  const clientKey = resolveClientKey(requestHeaders);
+  const evidence = {
+    ip,
+    userAgent: requestHeaders.get("user-agent") ?? null,
+  };
+  return decideProposal(token, decision, evidence, clientKey);
+}
+
+export async function listMessageTemplatesAction() {
+  return listMessageTemplates();
+}
+
+export async function updateMessageTemplateAction(key: string, input: { name?: string; body: string }) {
+  const result = await updateMessageTemplate(key, input);
+  revalidatePath("/admin/mensagens");
+  return result;
+}
+
+export async function listContractTemplatesAction() {
+  return listContractTemplates();
+}
+
+export async function updateContractTemplateAction(
+  id: string,
+  input: { name?: string; body: string; clauses: unknown },
+) {
+  const result = await updateContractTemplate(id, input);
+  revalidatePath("/admin/mensagens");
+  return result;
+}
+
+export async function listNotificationEventsAction(entityId: string) {
+  return listNotificationEvents(entityId);
+}
+
+export async function requestContractSignatureAction(contractId: string) {
+  const result = await requestContractSignature(contractId);
+  revalidatePath("/propostas");
+  return result;
+}
+
+export async function advanceSignatureAction(contractId: string, status: SignatureStatusName) {
+  const result = await advanceSignatureStatus(contractId, status);
+  revalidatePath("/propostas");
+  return result;
+}
+
+export async function listServiceCatalogAction() {
+  return listServiceCatalog({ includeInactive: true });
+}
+
+export async function updateServicePricingAction(
+  id: string,
+  input: { baseLow?: number; baseMedium?: number; baseHigh?: number; active?: boolean; reason?: string },
+) {
+  const result = await updateServiceItem(id, input);
+  revalidatePath("/admin/servicos");
+  return result;
+}
+
+export async function listCommercialPackagesAction() {
+  return listCommercialPackages();
+}
+
+export async function replacePackageItemsAction(packageId: string, serviceIds: string[]) {
+  const result = await replacePackageItems(packageId, serviceIds);
+  revalidatePath("/admin/servicos");
+  return result;
+}
+export async function sendProposalWhatsAppAction(proposalId: string) {
+  const result = await sendProposalWhatsApp(proposalId);
+  revalidatePath(`/propostas/${proposalId}`);
+  revalidatePath("/propostas");
+  return result;
+}
+
+export async function generateContractAction(proposalId: string) {
+  const result = await generateContract(proposalId);
+  revalidatePath(`/propostas/${proposalId}`);
+  return result;
+}
+
+/**
+ * Tópico 37 — dispara a conversão. A autorização é feita no serviço
+ * (`requireRole("ADMIN")`), não aqui: o ID recebido do frontend nunca é
+ * tratado como prova de acesso.
+ */
+export async function convertProposalAction(proposalId: string) {
+  const result = await convertApprovedProposal(proposalId);
+  revalidatePath(`/propostas/${proposalId}`);
+  revalidatePath("/propostas");
+  revalidatePath(`/projetos/${result.projectId}`);
+  return result;
+}
+
+/** Tópico 37 — mostra o que impede a conversão, sem executá-la. */
+export async function getConversionReadinessAction(proposalId: string) {
+  return getConversionReadiness(proposalId);
+}
+
+/** Tópico 36 — trilha de auditoria de uma entidade comercial. */
+export async function listAuditTrailAction(entity: string, entityId: string) {
+  await requireRole("ADMIN");
+  return listAuditTrail(entity, entityId);
+}
+

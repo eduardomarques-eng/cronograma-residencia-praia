@@ -1,0 +1,18 @@
+-- Prompt 18, item 2 — CONGELAMENTO DO PLANO DE PAGAMENTO POR VERSÃO
+--
+-- CAUSA RAIZ (auditada no item 3): o plano de pagamento não era persistido.
+-- Era re-derivado do texto livre `formalText.formaPagamento` a cada leitura,
+-- em três pontos independentes (preview do ADMIN, conversão e página pública).
+-- Consequências reais:
+--   * uma proposta JÁ PUBLICADA mudava sozinha se o texto fosse editado;
+--   * ADMIN e cliente podiam ver planos diferentes;
+--   * a conversão criava parcelas de um plano potencialmente diferente do
+--     que o cliente aprovou.
+--
+-- A coluna congela o plano na gravação da versão. Passa a haver uma única
+-- fonte de verdade, lida por todos os consumidores.
+--
+-- A coluna fica NULL nas versões já existentes: são heranças, não um estado
+-- inválido. O leitor distingue-as e emite aviso ao ADMIN, em vez de fingir
+-- que o plano está congelado.
+ALTER TABLE "ProposalVersion" ADD COLUMN "paymentPlan" JSONB;

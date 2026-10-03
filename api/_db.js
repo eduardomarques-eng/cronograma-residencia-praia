@@ -23,9 +23,14 @@ function getPool() {
 
   pool = new Pool({
     connectionString,
-    // Postgres gerenciado (Neon, Supabase, RDS) exige TLS. O certificado nao e
-    // verificado porque esses provedores usam CA propria no endpoint pooled.
-    ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false },
+    // Postgres gerenciado exige TLS com validação de certificado. Quando um
+    // provedor usa uma CA privada, ela deve ser configurada explicitamente.
+    ssl: connectionString.includes('localhost')
+      ? false
+      : {
+          rejectUnauthorized: true,
+          ...(process.env.DATABASE_SSL_CA ? { ca: process.env.DATABASE_SSL_CA } : {})
+        },
     max: 3,
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 8000

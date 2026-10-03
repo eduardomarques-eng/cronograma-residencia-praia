@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -71,3 +72,83 @@ export async function downloadProjectDocument(id: string) {
   const body = await readFile(path.join(localRoot, document.storageUrl));
   return { document, body };
 }
+
+type StoredCommercialDocument = {
+  projectId: string;
+  name: string;
+  /** Texto já renderizado; o módulo de documentos grava no storage de sempre. */
+  text: string;
+  mimeType?: string;
+  source: "PROPOSAL" | "CONTRACT" | "CONTRACT_SIGNED" | "PAYMENT_RECEIPT";
+  proposalId?: string | null;
+  contractId?: string | null;
+  /** Chave estável que impede gravar o mesmo artefato duas vezes. */
+  sourceKey: string;
+  visibility?: "INTERNAL" | "CLIENT";
+};
+
+/**
+ * Tópico 39 — guarda um artefato comercial no MÓDULO DE DOCUMENTOS EXISTENTE.
+ *
+ * Não existe um segundo sistema de armazenamento: reutiliza exatamente o
+ * mesmo `s3Config()`/`localRoot` e a mesma tabela `ProjectDocument` já
+ * consultada pelo portal do cliente. O que muda são apenas três colunas de
+ * rastreio (`source`, `proposalId`/`contractId`, `sourceKey`).
+ *
+ * A gravação é idempotente por `sourceKey`: reexecutar a conversão devolve o
+ * documento já existente em vez de criar um duplicado.
+ */
+export async function storeCommercialDocument(input: StoredCommercialDocument) {
+  await requireRole("ADMIN");
+
+  // Chave já usada: o artefato existe. Devolvemos o registo atual.
+  const existing = await prisma.projectDocument.findUnique({ where: { sourceKey: input.sourceKey } });
+  if (existing) return { document: existing, created: false };
+
+  const project = await prisma.project.findUnique({ where: { id: input.projectId }, select: { id: true } });
+  if (!project) return notFound("Projeto");
+
+  const mimeType = input.mimeType ?? "text/plain";
+  const bytes = Buffer.from(input.text, "utf8");
+  const storageKey = `${input.projectId}/comercial/${input.sourceKey.replace(/[^a-zA-Z0-9._-]/g, "_")}.txt`;
+
+  const config = s3Config();
+  if (config) {
+    await config.client.send(
+      new PutObjectCommand({ Bucket: config.bucket, Key: storageKey, Body: bytes, ContentType: mimeType }),
+    );
+  } else if (process.env.NODE_ENV === "production") {
+    throw new DomainError("Storage privado não configurado para produção.", "INTEGRITY");
+  } else {
+    await mkdir(path.join(localRoot, input.projectId, "comercial"), { recursive: true });
+    await writeFile(path.join(localRoot, storageKey.replace(/^\/+/, "")), bytes, { flag: "wx" });
+  }
+
+  try {
+    const document = await prisma.projectDocument.create({
+      data: {
+        projectId: input.projectId,
+        name: input.name,
+        storageUrl: storageKey,
+        mimeType,
+        sizeBytes: BigInt(bytes.byteLength),
+        source: input.source,
+        proposalId: input.proposalId ?? null,
+        contractId: input.contractId ?? null,
+        sourceKey: input.sourceKey,
+        visibility: input.visibility ?? "INTERNAL",
+        releasedAt: (input.visibility ?? "INTERNAL") === "CLIENT" ? new Date() : null,
+      },
+    });
+    return { document, created: true };
+  } catch (error) {
+    // Corrida entre duas execuções: o índice único decidiu, e o resultado
+    // correto é o documento que a outra execução gravou.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const document = await prisma.projectDocument.findUnique({ where: { sourceKey: input.sourceKey } });
+      if (document) return { document, created: false };
+    }
+    throw error;
+  }
+}
+

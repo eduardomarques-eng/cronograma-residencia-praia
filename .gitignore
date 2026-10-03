@@ -8,3 +8,11 @@ node_modules/
 node_modules
 .private-storage/
 test-results/
+
+# Ambiente e segredos — mantenha apenas .env.example versionado.
+.env
+.env.*
+!.env.example
+
+# Vercel CLI (npx vercel pull/build/deploy).
+.vercel/

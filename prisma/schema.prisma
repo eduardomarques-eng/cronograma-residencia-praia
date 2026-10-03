@@ -59,6 +59,30 @@ enum DocumentStatus {
   ARCHIVED
 }
 
+// Tópico 39: origem do documento no sistema comercial. Permite localizar a
+// proposta/contrato que originou o arquivo sem duplicar o armazenamento.
+enum DocumentSource {
+  UPLOAD
+  PROPOSAL
+  CONTRACT
+  CONTRACT_SIGNED
+  PAYMENT_RECEIPT
+}
+
+enum ProposalStatus {
+  DRAFT
+  IN_REVIEW
+  READY
+  GENERATED
+  SENT
+  VIEWED
+  APPROVED
+  REJECTED
+  EXPIRED
+  CANCELLED
+  CONVERTED
+}
+
 model User {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique
@@ -69,6 +93,7 @@ model User {
   client       Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   sessions     Session[]
   auditLogs    AuditLog[]
+  proposalVersions ProposalVersion[]
   projectAccess ProjectAccess[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -88,19 +113,46 @@ model Session {
   @@index([userId, expiresAt])
 }
 
+/**
+ * Tópico 36 — trilha de auditoria das ações críticas.
+ *
+ * `metadata` sozinho obrigava a abrir um blob para responder "quem/quando/qual
+ * versão". Estas colunas tornaram a consulta direta e indexada:
+ *   actorId + action + occurredAt  → quem fez, o quê e quando
+ *   entityVersion                  → qual versão foi afetada
+ *   fromStatus / toStatus          → estado anterior e posterior
+ */
 model AuditLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  action    String
-  entity    String
-  entityId  String?
-  metadata  Json?
-  userId    String?  @db.Uuid
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid()) @db.Uuid
+  action        String
+  entity        String
+  entityId      String?
+  metadata      Json?
+  // Quem fez. NULL significa ação de sistema (ex.: automação de conversão),
+  // e não "usuário desconhecido": são coisas diferentes.
+  actorId       String?  @db.Uuid
+  actorRole     String?
+  actorLabel    String?
+  // Versão da entidade afetada (ex.: versão 3 da proposta).
+  entityVersion Int?
+  // Transição de estado observada na ação.
+  fromStatus    String?
+  toStatus      String?
+  // Contexto técnico para investigação de incidentes.
+  ipAddress     String?
+  requestId     String?
+  outcome       String   @default("SUCCESS")
+  userId        String?  @db.Uuid
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  createdAt     DateTime @default(now())
 
   @@index([entity, entityId])
   @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([actorId, createdAt])
+  @@index([entityVersion])
 }
+
 
 model Client {
   id          String       @id @default(uuid()) @db.Uuid
@@ -109,7 +161,11 @@ model Client {
   email       String?
   phone       String?
   document    String?
+  cpf         String?
+  rg          String?
   address     Json?
+  city        String?
+  state       String?
   notes       String?
   status      ClientStatus @default(ACTIVE)
   projects    Project[]
@@ -140,6 +196,7 @@ model Project {
   reports        ProjectReport[]
   access         ProjectAccess[]
   documents      ProjectDocument[]
+  proposals      Proposal[]
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -170,12 +227,25 @@ model ProjectDocument {
   status       DocumentStatus    @default(ACTIVE)
   releasedAt   DateTime?
   archivedAt   DateTime?
+  // Tópico 39: liga o arquivo à entidade comercial que o originou.
+  source       DocumentSource    @default(UPLOAD)
+  proposalId   String?           @db.Uuid
+  contractId   String?           @db.Uuid
+  // Tópico 39: impede reenvio do mesmo artefato comercial. A chave é estável
+  // por construção (ex.: "proposta:v3", "contrato:assinatura"), então
+  // reexecutar a automação não duplica o documento.
+  sourceKey    String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   project      Project           @relation(fields: [projectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  proposal     Proposal?         @relation(fields: [proposalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  contract     Contract?         @relation(fields: [contractId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([projectId, visibility, status])
+  @@unique([sourceKey])
+  @@index([source])
 }
+
 
 model ProjectReport {
   id          String             @id @default(uuid()) @db.Uuid
@@ -235,14 +305,21 @@ model Payment {
   paidAt           DateTime?
   archivedAt       DateTime?
   scheduleStageId  String?       @db.Uuid
+  // Tópico 38: liga a parcela à proposta que a originou, permitindo detectar
+  // e não recriar parcelas já geradas.
+  sourceProposalId String?       @db.Uuid
+  sourceKey        String?
   project          Project       @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   scheduleStage    ScheduleStage? @relation(fields: [scheduleStageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  sourceProposal   Proposal?     @relation(fields: [sourceProposalId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
 
   @@unique([projectId, order])
+  @@unique([sourceKey])
   @@index([projectId, status])
   @@index([scheduleStageId])
+  @@index([sourceProposalId])
 }
 
 model Briefing {
@@ -301,4 +378,299 @@ model BriefingVisualOption {
 
   @@index([questionId, sortOrder])
   @@unique([questionId, value])
+}
+
+model Proposal {
+  id             String          @id @default(uuid()) @db.Uuid
+  projectId      String          @db.Uuid
+  status         ProposalStatus  @default(DRAFT)
+  currentVersion Int             @default(1)
+  expiresAt      DateTime?
+  sentAt         DateTime?
+  viewedAt       DateTime?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  approvalIp     String?
+  approvalMeta   Json?
+  approvedVersion Int?
+  // Tópico 37: marca de conversão. Numa única conversão por proposta, estes
+  // campos são gravados na mesma transação das parcelas, do serviço e dos
+  // documentos. Se a transação falhar, nada fica gravado e a próxima execução
+  // parte do zero — em vez de converter metade do negócio.
+  convertedAt    DateTime?
+  conversionKey  String?
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  versions       ProposalVersion[]
+  accessLinks    ProposalAccessLink[]
+  contract       Contract?
+  documents      ProjectDocument[]
+  payments       Payment[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([projectId, status])
+  @@index([status, updatedAt])
+  @@unique([conversionKey])
+}
+
+
+model ProposalVersion {
+  id             String    @id @default(uuid()) @db.Uuid
+  proposalId     String    @db.Uuid
+  version        Int
+  title          String
+  presentation   Json
+  formalText     Json
+  services       Json
+  subtotal       Decimal   @db.Decimal(12, 2)
+  adjustment     Decimal   @default(0) @db.Decimal(12, 2)
+  total          Decimal   @db.Decimal(12, 2)
+  authorId       String?   @db.Uuid
+  frozenAt       DateTime?
+  pricing        Json?
+  // Prompt 18, itens 2 e 5 — plano de pagamento CONGELADO por versão.
+  //
+  // Antes desta coluna o plano não era persistido: era re-interpretado do texto
+  // livre `formalText.formaPagamento` a cada leitura. Isso tornava uma proposta
+  // já publicada mutável (basta editar o texto) e permitia que ADMIN e cliente
+  // vissem planos diferentes. Congelando aqui, a versão publicada é
+  // historicamente reproduzível e ambos leem a mesma fonte.
+  //
+  // NULL significa apenas "versão criada antes desta migração"; o leitor trata
+  // esse caso à parte, com aviso explícito.
+  paymentPlan    Json?
+  createdAt      DateTime  @default(now())
+  proposal       Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  author         User?     @relation(fields: [authorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([proposalId, version])
+  @@index([proposalId, createdAt])
+}
+
+model ProposalAccessLink {
+  id          String    @id @default(uuid()) @db.Uuid
+  proposalId  String    @db.Uuid
+  tokenHash   String    @unique
+  revokedAt   DateTime?
+  expiresAt   DateTime?
+  firstAccessAt DateTime?
+  lastAccessAt DateTime?
+  proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([proposalId, revokedAt])
+}
+
+enum ContractStatus {
+  DRAFT
+  IN_REVIEW
+  READY
+  SENT
+  VIEWED
+  SIGNED
+  CANCELLED
+}
+
+enum SignatureStatus {
+  PENDING
+  SENT
+  VIEWED
+  SIGNED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+// Tópico 3: unidade de cobrança configurável. O banco nunca é fixo em m².
+enum ServiceUnit {
+  M2
+  AMBIENTE
+  UNIDADE
+  IMAGEM
+  PACOTE
+  FIXO
+  HORA
+  PERCENTUAL
+}
+
+// Tópico 5: faixas comerciais definidas pelo ADMIN (não são níveis de qualidade).
+enum PricingLevel {
+  BAIXO
+  MEDIO
+  ALTO
+}
+
+// Tópico 4: cadastro administrativo de serviços e precificação.
+model ServiceItem {
+  id                   String   @id @default(uuid()) @db.Uuid
+  name                 String
+  discipline           String
+  category             String?
+  descriptionCommercial String?
+  descriptionTechnical String?
+  unit                 ServiceUnit
+  baseLow              Decimal  @default(0) @db.Decimal(12, 2)
+  baseMedium           Decimal  @default(0) @db.Decimal(12, 2)
+  baseHigh             Decimal  @default(0) @db.Decimal(12, 2)
+  minPrice             Decimal? @db.Decimal(12, 2)
+  minQuantity          Decimal? @db.Decimal(12, 2)
+  maxQuantity          Decimal? @db.Decimal(12, 2)
+  increment            Decimal? @db.Decimal(12, 2)
+  estimatedDays        Int?
+  displayOrder         Int      @default(0)
+  active               Boolean  @default(true)
+  scope                String?
+  exclusions           String?
+  notes                String?
+  dependencies         Json?
+  calculationRules     Json?
+  presentationImages   Json?
+  icon                 String?
+  version              Int      @default(1)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  priceHistory         ServicePriceHistory[]
+  packageItems         PackageItem[]
+
+  @@unique([discipline, name])
+  @@index([discipline, active, displayOrder])
+}
+
+// Tópico 4: histórico obrigatório de alteração de preços.
+model ServicePriceHistory {
+  id            String       @id @default(uuid()) @db.Uuid
+  serviceId     String       @db.Uuid
+  level         PricingLevel
+  previousValue Decimal?     @db.Decimal(12, 2)
+  newValue      Decimal      @db.Decimal(12, 2)
+  reason        String?
+  changedById   String?      @db.Uuid
+  service       ServiceItem  @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt     DateTime     @default(now())
+
+  @@index([serviceId, createdAt])
+}
+
+// Tópico 11: pacotes configuráveis; os nomes ficam no banco.
+model CommercialPackage {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  items       PackageItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PackageItem {
+  id            String            @id @default(uuid()) @db.Uuid
+  packageId     String            @db.Uuid
+  serviceId     String            @db.Uuid
+  displayOrder  Int               @default(0)
+  optional      Boolean           @default(false)
+  overrideUnit  ServiceUnit?
+  overridePrice Decimal?          @db.Decimal(12, 2)
+  package       CommercialPackage @relation(fields: [packageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  service       ServiceItem       @relation(fields: [serviceId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([packageId, serviceId])
+}
+
+model ContractSignature {
+  id             String          @id @default(uuid()) @db.Uuid
+  contractId     String          @unique @db.Uuid
+  provider       String
+  externalId     String?
+  signatoryName  String
+  signatoryEmail String?
+  signatoryPhone String?
+  status         SignatureStatus @default(PENDING)
+  sentAt         DateTime?
+  viewedAt       DateTime?
+  signedAt       DateTime?
+  completedAt    DateTime?
+  evidence       Json?
+  lastError      String?         @db.Text
+  contract       Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+model MessageTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique
+  channel   String
+  name      String
+  body      String   @db.Text
+  active    Boolean  @default(true)
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([channel, active])
+}
+
+model NotificationEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  type        String
+  channel     String
+  templateKey String?
+  recipient   String?
+  subject     String?
+  body        String   @db.Text
+  status      String
+  error       String?  @db.Text
+  payload     Json?
+  entityType  String?
+  entityId    String?
+  occurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([type, occurredAt])
+  @@index([entityType, entityId])
+  @@index([status, occurredAt])
+}
+
+model ContractTemplate {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  version   Int       @default(1)
+  active    Boolean   @default(true)
+  isDefault Boolean   @default(false)
+  body      String    @db.Text
+  clauses   Json
+  scopeKey   String?
+  disciplines String[] @default([])
+  contracts  Contract[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([active, isDefault])
+}
+
+model Contract {
+  id              String          @id @default(uuid()) @db.Uuid
+  proposalId      String          @unique @db.Uuid
+  version         Int
+  title           String
+  content         Json
+  status          ContractStatus  @default(DRAFT)
+  templateId      String?         @db.Uuid
+  templateVersion Int?
+  signature       ContractSignature?
+  generatedAt     DateTime        @default(now())
+  sentAt          DateTime?
+  viewedAt        DateTime?
+  signedAt        DateTime?
+  signatureMeta   Json?
+  proposal        Proposal        @relation(fields: [proposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  template        ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  // Tópico 39: o contrato e a via assinada vivem no mesmo módulo de documentos.
+  documents       ProjectDocument[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status, updatedAt])
 }

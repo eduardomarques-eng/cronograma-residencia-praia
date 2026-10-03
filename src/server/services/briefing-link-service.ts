@@ -46,7 +46,9 @@ export async function getBriefingLinkStatus(projectId: string) {
 }
 
 export async function resolveBriefingToken(token: string) {
-  if (!/^[A-Za-z0-9_-]{40,}$/.test(token)) throw new DomainError("Link de briefing inválido.", "NOT_FOUND");
+  // Limite superior pelo mesmo motivo do token da proposta (Prompt 19, item 51):
+  // sem ele, um token gigante era aceite e ainda era hasheado.
+  if (!/^[A-Za-z0-9_-]{40,128}$/.test(token)) throw new DomainError("Link de briefing inválido.", "NOT_FOUND");
   const link = await prisma.briefingAccessLink.findUnique({
     where: { tokenHash: hashBriefingToken(token) },
     include: { briefing: { include: { project: { select: { id: true, name: true, client: { select: { name: true } } } } } } },

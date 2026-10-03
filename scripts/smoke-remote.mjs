@@ -8,6 +8,7 @@ async function check(path, expectedStatus = 200) {
 }
 
 await check("/login");
+await check("/api/health");
 const invalidBriefing = await check("/briefing/not-a-real-briefing-token");
 const html = await invalidBriefing.text();
 if (html.includes("Vamos construir esse projeto juntos")) throw new Error("Token inválido abriu o formulário de briefing.");
