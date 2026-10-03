@@ -24,6 +24,8 @@ marcadas abaixo.
 | `STORAGE_*` | Recomendada | S3 privado para documentos. Sem isto, documentos só funcionam em desenvolvimento. |
 | `SIGNATURE_PROVIDER` | Opcional | `manual` (predefinido) ou `http`. |
 | `WHATSAPP_PROVIDER` | Opcional | `wa.me` (predefinido) ou `api`. |
+| `RESEND_API_KEY` | Recomendada | Sem ela o link de recuperação **não chega ao cliente** por e-mail. |
+| `EMAIL_FROM` | Recomendada | Remetente validado no Resend. |
 
 > ⚠️ `ADMIN_KEY` só foi adicionada ao `.env.example` nesta versão. Se o seu
 > deploy anterior já existia, **tem de a definir agora** — as funções de escrita

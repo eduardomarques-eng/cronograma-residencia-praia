@@ -13,6 +13,7 @@ export default defineConfig([
       globals: {
         process: "readonly",
         HTMLButtonElement: "readonly",
+        HTMLFormElement: "readonly",
         Request: "readonly",
         Response: "readonly",
         Headers: "readonly",

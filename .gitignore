@@ -16,3 +16,5 @@ test-results/
 
 # Vercel CLI (npx vercel pull/build/deploy).
 .vercel/
+.vercel
+.env*
