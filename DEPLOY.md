@@ -69,6 +69,31 @@ npm run db:seed
 São **13 migrations**. Todas são aditivas (nenhum `DROP`), por isso não
 destroem dados.
 
+### Supabase: usar o *session pooler*, nunca o *transaction pooler*
+
+Ao copiar a connection string do Supabase, escolha a porta certa:
+
+| Porta | Tipo | Usar para |
+|---|---|---|
+| **5432** | session pooler (`aws-0-<região>.pooler.supabase.com`) | **migrations e runtime — use esta** |
+| 6543 | transaction pooler | não usar com Prisma |
+
+O *transaction pooler* (6543) **não** suporta `prisma migrate deploy`: as
+migrations correm dentro de transações implícitas e o Prisma precisa de
+sessões persistentes. Ligar por 6543 faz `migrate deploy` falhar.
+
+String usada nesta validação (a password é a do utilizador `postgres`):
+
+```
+postgresql://postgres.<project-ref>:<password>@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?schema=public&sslmode=require
+```
+
+O `sslmode=require` é obrigatório no Supabase.
+
+> 🔐 **Só precisa de `DATABASE_URL`.** Esta aplicação usa Prisma com
+> autenticação própria — **não** configure `SUPABASE_SERVICE_ROLE_KEY` nem
+> `SUPABASE_JWT_SECRET`. Menos segredos expostos, menos risco.
+
 ---
 
 ## 4. Credenciais criadas pelo seed
