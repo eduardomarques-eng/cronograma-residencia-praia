@@ -10,6 +10,7 @@ function jsonResponses(value: Record<string, unknown>): Prisma.InputJsonValue {
 }
 
 export async function startBriefing(projectId: string) {
+  await requireProjectAccess(projectId);
   return prisma.briefing.upsert({
     where: { projectId },
     create: { projectId, responses: {} },
@@ -36,6 +37,7 @@ export async function saveBriefingResponses(projectId: string, input: unknown) {
 }
 
 export async function updateBriefing(projectId: string, input: unknown) {
+  await requireRole("ADMIN");
   const data = briefingUpdateSchema.parse(input);
   const { responses, ...rest } = data;
   return prisma.briefing.update({

@@ -1,83 +1,10 @@
-# Cronograma ArqVértice
-
-Acompanhamento de projetos e obra por fase, com painel para o cliente e
-relatório executivo em PDF.
-
-Aplicação estática — HTML, CSS e JavaScript sem build — mais funções
-serverless em `api/` para a persistência em PostgreSQL.
-
-## O que ela faz
-
-- **Ficha da obra** com cliente, localização, zoneamento, áreas e prazos.
-- **Equipe técnica** calculada a partir das tarefas: cada profissional
-  aparece com as disciplinas sob sua responsabilidade e o avanço real.
-- **Fase atual do empreendimento** com o marcador "Estamos aqui", etapas em
-  execução, próximas entregas e um resumo executivo em uma frase.
-- **Kanban** em Não Iniciado / Em Andamento / Finalizado, com as etapas
-  agrupadas por disciplina dentro de cada coluna e resumo por coluna.
-- **Tabela de controle** com ordenação e edição em linha.
-- **Relatório em PDF** para o cliente, com fase atual e parecer técnico
-  calculado a partir das etapas reais.
-
-Disciplinas: Arquitetura, 3D, Estrutural, Complementares e Execução da Obra.
-A lista é definida em `PHASE_MODEL`, no início de `painel-cliente.js`, e é a
-fonte única — faixa de fases, Kanban, KPIs e relatório leem todos dali.
-
-## Banco de dados
-
-Sem banco configurado o app funciona igual, guardando tudo no `localStorage`
-do navegador. Com banco, o servidor passa a ser a fonte da verdade.
-
-Para ligar:
-
-1. Provisionar um PostgreSQL e definir `DATABASE_URL` no ambiente.
-2. Definir `ADMIN_KEY` — uma senha longa, que libera as escritas.
-3. Aplicar o esquema: `psql "$DATABASE_URL" -f database/schema.sql`
-
-Conferir em `/api/status`, que devolve o diagnóstico sem expor credencial.
-
-**Leitura é pública** (o cliente acompanha a obra pelo link) e **escrita exige
-a chave**, enviada no cabeçalho `x-chave-admin`. O selo no cabeçalho da página
-mostra a origem dos dados e é onde a chave é informada.
-
-## Rodar localmente
-
-Não é preciso Node nem Python:
-
-```
-iniciar_local.bat
-```
-
-O `.bat` chama `scripts/servidor-local.ps1`, um servidor estático em
-PowerShell puro. As funções de `api/` não rodam nesse modo — o app cai para
-`localStorage`, que é o comportamento esperado sem banco.
-
-## Arquivos
-
-| Arquivo | Papel |
-|---|---|
-| `index.html` | Estrutura da página |
-| `app.js` | Estado, filtros, Kanban, tabela, modais e relatório |
-| `painel-cliente.js` | Fases, equipe técnica e resumos do Kanban |
-| `api-cliente.js` | Ponte com a API e decisão entre modo local e nuvem |
-| `api/` | Funções serverless: `tarefas`, `projeto` e `status` |
-| `database/schema.sql` | Esquema PostgreSQL, idempotente, com carga inicial |
-
----
-
-O briefing de entrevista com o cliente é uma aplicação separada, no
-repositório `briefing-arqvertice`.
-
-ArqVértice • Arquitetura, Estrutura & Engenharia
 # ArqVértice Flow
 
-## Aplicação moderna
+Aplicação Next.js para gestão de clientes, projetos, cronograma, pagamentos,
+briefing guiado, relatórios e portal do cliente. O aplicativo legado continua
+preservado na raiz para migração gradual.
 
-O Flow mantém o aplicativo legado em funcionamento e adiciona uma aplicação Next.js
-com TypeScript, Prisma e PostgreSQL. O modelo oficial do cronograma legado continua
-sendo a referência de ordenação, datas e progresso.
-
-### Desenvolvimento
+## Desenvolvimento
 
 ```bash
 npm install
@@ -85,22 +12,42 @@ copy .env.example .env
 npm run dev
 ```
 
-Defina `DATABASE_URL` e um `AUTH_SECRET` com pelo menos 32 caracteres. A autenticação
-usa sessões server-side, cookie `httpOnly` e os papéis `ADMIN` e `CLIENT`. Clientes
-só podem consultar projetos vinculados ao próprio registro.
+Defina `DATABASE_URL` e `AUTH_SECRET` com pelo menos 32 caracteres. A
+autenticação usa sessões server-side, cookie `httpOnly` e os papéis `ADMIN` e
+`CLIENT`. Toda autorização é verificada no servidor; o cliente só consulta
+projetos vinculados ao próprio cliente ou a um acesso explícito.
 
-### Banco
+## Banco e migrations
 
 ```bash
-npx prisma migrate deploy
 npx prisma generate
+npx prisma migrate deploy
 npm run db:seed
 ```
 
-O seed exige `SEED_ADMIN_PASSWORD` e `SEED_CLIENT_PASSWORD`; credenciais reais nunca
-devem ser commitadas. O PostgreSQL pode ser hospedado em Supabase, Neon ou Render.
+O seed exige `SEED_ADMIN_PASSWORD` e `SEED_CLIENT_PASSWORD`. Ele é idempotente
+para os usuários e dados demonstrativos principais, mas deve ser executado
+somente em ambientes apropriados. Nunca use senhas reais no repositório.
 
-### Verificação
+Antes de aplicar migrations em produção, faça backup e revise o SQL. A
+migration de consolidação usa constraints `RESTRICT` para preservar projetos,
+relatórios, documentos e acessos relacionados. Esta sessão não possui um
+PostgreSQL de produção, portanto a aplicação real da migration e a restauração
+de backup ainda precisam ser validadas no ambiente do operador.
+
+## Variáveis de ambiente
+
+- `DATABASE_URL`: conexão PostgreSQL do ambiente atual.
+- `NEXT_PUBLIC_APP_URL`: URL pública usada por links e metadados.
+- `AUTH_SECRET`: segredo local do hash de senhas; use valor aleatório de 32+
+  caracteres e um valor diferente por ambiente.
+- `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`,
+  `SEED_CLIENT_PASSWORD`: somente para seed.
+
+Use arquivos `.env` fora do controle de versão. O arquivo `.env.example`
+contém apenas valores de exemplo.
+
+## Verificação
 
 ```bash
 npm test
@@ -109,48 +56,48 @@ npm run typecheck
 npm run build
 ```
 
-O workflow em `.github/workflows/ci.yml` executa essas verificações em pull requests
-e pushes para `main`. Na Vercel, configure as mesmas variáveis de ambiente e use
-`npm run build`; aplique migrations no banco antes de liberar a aplicação.
+O workflow em `.github/workflows/ci.yml` executa essas verificações em pushes
+para `main` e pull requests. Na Vercel, configure as variáveis de produção e
+aplique as migrations no PostgreSQL antes de liberar a aplicação.
 
-### Estrutura
+## Funcionalidades e segurança
 
-- `src/app`: páginas, portal, relatório imprimível e rotas de autenticação.
+- **ADMIN**: gerencia clientes, projetos, cronograma, pagamentos, briefing e
+  publicação de relatórios.
+- **CLIENT**: acessa somente o próprio projeto autorizado, cronograma,
+  pagamentos e relatórios liberados.
+- **Briefing**: links usam tokens aleatórios e o banco armazena somente hash
+  SHA-256. Links revogados ou expirados não são aceitos.
+- **Áudio**: a Web Speech API processa a transcrição no navegador em `pt-BR`.
+  O áudio não é enviado nem armazenado pela aplicação; sem suporte, a edição
+  manual continua disponível.
+- **Relatórios**: estados `PREPARING`, `INTERNAL`, `RELEASED` e `ARCHIVED`;
+  somente `RELEASED` aparece no portal.
+- **Impressão/PDF**: o relatório usa impressão do navegador com estilos de
+  impressão.
 
-### Link seguro de briefing
+O modelo de documentos já possui entidade, status e visibilidade no Prisma,
+mas upload, storage externo, download autorizado e UI de documentos ainda não
+estão implementados. Não trate `storageUrl` como mecanismo de segurança até
+que um storage com URLs privadas e autorização server-side seja integrado.
 
-Administradores podem gerar um link exclusivo na página do projeto. O endereço
-usa um token aleatório, enquanto o banco armazena somente seu hash SHA-256.
-Gerar novamente revoga o link anterior; revogar invalida o acesso imediatamente.
-O cliente preenche em `/briefing/<token>` sem receber um ID interno e, após o
-envio, é direcionado ao login do Portal do Cliente. O token não cria sessão
-administrativa nem concede acesso a outros recursos do projeto.
+## Produção e recuperação
 
-### Respostas por voz
+O deploy previsto é Vercel + PostgreSQL compatível (Supabase, Neon ou Render).
+Configure backups e retenção no provedor escolhido e documente o procedimento
+de restauração antes do primeiro uso real. O repositório não executa backup,
+migração automática nem smoke test remoto por conta própria.
 
-Campos de texto do briefing exibem um botão de microfone em navegadores que
-suportam a Web Speech API. A captura usa `pt-BR`, mostra a transcrição
-progressivamente e permite pausar, continuar, cancelar e editar o texto antes
-do autosave. O áudio não é enviado nem armazenado pela aplicação: a transcrição
-é processada pelo navegador e somente o texto confirmado pelo cliente segue o
-mesmo fluxo de persistência das respostas digitadas. Em ambientes sem suporte
-ou sem permissão de microfone, o campo permanece disponível para digitação.
+Após o deploy, valide login ADMIN e CLIENT, isolamento entre projetos,
+briefing por token, cronograma, pagamentos e relatórios liberados. Monitore
+falhas de autenticação, banco, geração de relatório e runtime sem registrar
+tokens ou senhas.
 
-### Ambientes ADMIN e CLIENTE
+## Estrutura
 
-O ambiente administrativo usa o centro operacional do projeto para concentrar
-briefing, cronograma, pagamentos, documentos, observações, links enviados e
-relatórios. Relatórios possuem publicação server-side (`PREPARING`, `INTERNAL`,
-`RELEASED` ou `ARCHIVED`); somente `RELEASED` é retornado ao cliente.
-O Portal do Cliente apresenta apenas o projeto autorizado pela sessão, seu
-cronograma, pagamentos autorizados, briefing e relatórios liberados. A
-interface não é o mecanismo de segurança: o filtro por `clientId`, o RBAC e a
-visibilidade de relatórios são aplicados no servidor.
-
-- `src/server/services`: regras de negócio e acesso ao Prisma.
-- `src/lib`: validações, finanças e adaptador de paridade do cronograma.
+- `src/app`: páginas, portal, briefing, relatório e actions.
+- `src/server`: autenticação, autorização, serviços de domínio e Prisma.
+- `src/lib`: validações, finanças, cronograma e definição do briefing.
 - `prisma`: schema, migrations e seed.
-- arquivos na raiz e `api/`: legado preservado para compatibilidade.
-
-O botão de relatório usa a impressão do navegador, permitindo salvar como PDF com
-paginação e estilos específicos de impressão.
+- `api/`, `app.js`, `painel-cliente.js` e demais arquivos da raiz: legado
+  preservado para compatibilidade; sua remoção deve ser uma decisão separada.
