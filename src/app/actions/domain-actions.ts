@@ -12,6 +12,7 @@ import { requireProjectAccess, requireRole } from "@/server/auth";
 import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@/server/services/briefing-link-service";
 import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
 import { updateReportVisibility } from "@/server/services/report-visibility-service";
+import { archiveProjectDocument, uploadProjectDocument } from "@/server/services/document-service";
 
 export async function saveClientAction(input: unknown) {
   await requireRole("ADMIN");
@@ -122,6 +123,23 @@ export async function finishBriefingTokenAction(token: string) {
 
 export async function updateReportVisibilityAction(projectId: string, reportId: string, status: "PREPARING" | "INTERNAL" | "RELEASED" | "ARCHIVED") {
   const result = await updateReportVisibility(projectId, reportId, status);
+  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
+  return result;
+}
+
+export async function uploadProjectDocumentAction(projectId: string, formData: FormData) {
+  const file = formData.get("file");
+  const visibility = formData.get("visibility");
+  if (!file || typeof file !== "object" || !("arrayBuffer" in file) || (visibility !== "INTERNAL" && visibility !== "CLIENT")) throw new Error("Arquivo ou visibilidade inválidos.");
+  const result = await uploadProjectDocument(projectId, file as { name: string; size: number; type: string; arrayBuffer(): Promise<ArrayBuffer> }, visibility);
+  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
+  return result;
+}
+
+export async function archiveProjectDocumentAction(projectId: string, documentId: string) {
+  const result = await archiveProjectDocument(documentId);
   revalidatePath(`/projetos/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return result;

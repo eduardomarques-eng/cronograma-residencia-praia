@@ -6,3 +6,5 @@
 tsconfig.tsbuildinfo
 node_modules/
 node_modules
+.private-storage/
+test-results/

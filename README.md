@@ -43,6 +43,10 @@ de backup ainda precisam ser validadas no ambiente do operador.
   caracteres e um valor diferente por ambiente.
 - `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`, `SEED_CLIENT_EMAIL`,
   `SEED_CLIENT_PASSWORD`: somente para seed.
+- `STORAGE_BUCKET`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY_ID`,
+  `STORAGE_SECRET_ACCESS_KEY`: storage S3-compatible privado obrigatório em
+  produção. `STORAGE_ENDPOINT` e `STORAGE_FORCE_PATH_STYLE` são opcionais para
+  provedores compatíveis.
 
 Use arquivos `.env` fora do controle de versão. O arquivo `.env.example`
 contém apenas valores de exemplo.
@@ -60,6 +64,23 @@ npm run build
 O workflow em `.github/workflows/ci.yml` executa essas verificações em pushes
 para `main` e pull requests. Na Vercel, configure as variáveis de produção e
 aplique as migrations no PostgreSQL antes de liberar a aplicação.
+
+### Deploy e smoke test remoto
+
+O deploy produtivo é manual e auditável pelo workflow
+`.github/workflows/deploy-production.yml`. Configure no environment
+`production` do GitHub:
+
+- secrets `DATABASE_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID` e
+  `VERCEL_PROJECT_ID`;
+- variable `PRODUCTION_URL`, com a URL HTTPS sem barra final.
+
+O workflow valida o schema, aplica somente migrations pendentes, constrói e
+publica o Next.js na Vercel e executa `npm run smoke:remote`. O smoke test
+verifica `/login` e garante que um token de briefing inválido não abre o
+formulário. Ele não substitui testes autenticados com fixtures de staging.
+Execute o workflow pela aba **Actions > Deploy production > Run workflow** e
+confirme os logs, URL, banco e variáveis da Vercel antes de anunciar a versão.
 
 ### E2E de isolamento e briefing
 
@@ -98,9 +119,12 @@ credenciais de produção em CI local.
   impressão.
 
 O modelo de documentos já possui entidade, status e visibilidade no Prisma,
-mas upload, storage externo, download autorizado e UI de documentos ainda não
-estão implementados. Não trate `storageUrl` como mecanismo de segurança até
-que um storage com URLs privadas e autorização server-side seja integrado.
+upload e download autorizado usam uma chave opaca no storage S3-compatible.
+Em desenvolvimento, arquivos são gravados em `.private-storage/`, que está no
+`.gitignore`. Em produção, a aplicação recusa upload sem storage privado
+configurado; o endpoint de download valida a sessão, o projeto e a
+visibilidade antes de buscar o objeto. Não forneça URLs públicas do bucket.
+Uploads aceitam PDF, PNG, JPG e TXT até 10 MB.
 
 ## Produção e recuperação
 
