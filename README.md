@@ -51,6 +51,7 @@ contém apenas valores de exemplo.
 
 ```bash
 npm test
+npm run test:e2e
 npm run lint
 npm run typecheck
 npm run build
@@ -59,6 +60,26 @@ npm run build
 O workflow em `.github/workflows/ci.yml` executa essas verificações em pushes
 para `main` e pull requests. Na Vercel, configure as variáveis de produção e
 aplique as migrations no PostgreSQL antes de liberar a aplicação.
+
+### E2E de isolamento e briefing
+
+A suíte Playwright cobre token inválido, acesso ao próprio projeto, tentativa
+de acesso cruzado e retomada/autosave/revisão do briefing. Os testes que
+precisam de dados persistidos são opt-in para não alterar bancos reais:
+
+```powershell
+$env:E2E_CLIENT_EMAIL = "cliente-e2e@example.com"
+$env:E2E_CLIENT_PASSWORD = "senha-de-teste-com-12"
+$env:E2E_OWN_PROJECT_ID = "<uuid-do-projeto-do-cliente>"
+$env:E2E_FOREIGN_PROJECT_ID = "<uuid-de-projeto-de-outro-cliente>"
+$env:E2E_BRIEFING_TOKEN = "<token-de-briefing-nao-finalizado>"
+npx playwright install chromium
+npm run test:e2e
+```
+
+Use uma base de dados descartável ou uma instância de staging. A suíte não
+cria, altera ou remove fixtures automaticamente e nunca deve receber
+credenciais de produção em CI local.
 
 ## Funcionalidades e segurança
 
