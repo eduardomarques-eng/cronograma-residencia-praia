@@ -1,12 +1,10 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/brand";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   async function submit(formData: FormData) {
@@ -14,7 +12,11 @@ export default function LoginPage() {
     setError("");
     const response = await fetch("/api/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(Object.fromEntries(formData)) });
     if (!response.ok) setError((await response.json()).error ?? "Não foi possível entrar.");
-    else router.push("/");
+    // Navegação COMPLETA, e não `router.push`: só um pedido novo relê o cookie
+    // que a resposta acabou de definir. A navegação do router servia o payload
+    // já em cache, a entrada via como visitante anónimo e o cliente ficava na
+    // página inicial em vez de ir para o portal.
+    else window.location.assign("/");
     setPending(false);
   }
   return (

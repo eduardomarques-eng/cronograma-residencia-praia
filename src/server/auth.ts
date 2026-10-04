@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/server/db";
 import { DomainError } from "./errors";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -75,7 +75,16 @@ export async function requireProjectAccess(projectId: string) {
 export async function requirePageProjectAccess(projectId: string) {
   const user = await currentUser();
   if (!user) redirect(`/login?next=/portal/${encodeURIComponent(projectId)}`);
-  return requireProjectAccess(projectId);
+  try {
+    return await requireProjectAccess(projectId);
+  } catch (error) {
+    // Um cliente que peça o projeto de outro tem de receber uma resposta
+    // INDISTINGUÍVEL da de um projeto que não existe. Deixar o DomainError
+    // escapar produzia uma página de erro 500 — que confirma ao atacante que
+    // o recurso existe e difere do 404 real.
+    if (error instanceof DomainError && error.code === "NOT_FOUND") notFound();
+    throw error;
+  }
 }
 
 /**

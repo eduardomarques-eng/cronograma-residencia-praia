@@ -11,6 +11,23 @@ function answerIsPresent(value: unknown) {
   return Array.isArray(value) ? value.length > 0 : typeof value === "string" ? value.trim().length > 0 : value !== undefined && value !== null;
 }
 
+/**
+ * Uma resposta guardada pode ser texto, lista (escolha múltipla) ou objeto.
+ * A revisão tem de mostrar o que a pessoa escolheu, não um contador: um ecrã
+ * chamado "Revise antes de enviar" que não mostra as respostas não deixa
+ * confirmar nada.
+ */
+function answerText(value: unknown): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) return value.map((item) => answerText(item)).filter(Boolean).join(" · ");
+  if (typeof value === "object") {
+    const registo = value as Record<string, unknown>;
+    return String(registo.text ?? registo.value ?? registo.label ?? JSON.stringify(value));
+  }
+  return String(value);
+}
+
 export function GuidedBriefing({ projectId, accessToken, initialResponses, initialStatus, initialVersion, persistedVisualOptions }: Props) {
   const [responses, setResponses] = useState(initialResponses);
   const [sectionIndex, setSectionIndex] = useState(0);
@@ -66,5 +83,5 @@ export function GuidedBriefing({ projectId, accessToken, initialResponses, initi
 
 function Review({ projectId, responses, answered, pending, onBack, onFinish }: { projectId: string; responses: Record<string, unknown>; answered: number; pending: boolean; onBack: () => void; onFinish: () => void }) {
   const incomplete = allBriefingQuestions.length - answered;
-  return <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-5 sm:p-8"><p className="text-sm font-semibold text-blue-600">Última etapa</p><h1 className="mt-2 text-2xl font-bold text-slate-950">Revise antes de enviar</h1><p className="mt-2 text-sm leading-6 text-slate-500">Confira suas escolhas. Você pode voltar a qualquer seção para corrigir.</p><div className="mt-6 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-emerald-50 p-4"><strong className="block text-xl text-emerald-800">{answered}</strong><span className="text-xs text-emerald-700">respondidas</span></div><div className="rounded-2xl bg-amber-50 p-4"><strong className="block text-xl text-amber-800">{incomplete}</strong><span className="text-xs text-amber-700">pendentes</span></div><div className="rounded-2xl bg-slate-50 p-4"><strong className="block text-xl text-slate-800">Rascunho</strong><span className="text-xs text-slate-500">salvo no projeto</span></div></div><div className="mt-8 space-y-3">{briefingSections.map((section) => { const sectionAnswered = section.questions.filter((question) => answerIsPresent(responses[question.id])).length; return <div key={section.id} className="flex items-center justify-between rounded-2xl border border-slate-200 p-4"><span className="text-sm font-semibold text-slate-800">{section.title}</span><span className="text-xs text-slate-500">{sectionAnswered}/{section.questions.length}</span></div>; })}</div><div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><button type="button" onClick={onBack} className="min-h-12 rounded-2xl px-5 text-sm font-semibold text-slate-600">← Voltar e corrigir</button><button type="button" disabled={pending} onClick={onFinish} className="min-h-12 rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white disabled:opacity-50">{pending ? "Enviando…" : `Confirmar envio (${answered} respostas)`}</button></div><p className="mt-4 text-center text-xs text-slate-400">Ao confirmar, o briefing será finalizado e uma versão ficará registrada.</p></div>;
+  return <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-5 sm:p-8"><p className="text-sm font-semibold text-blue-600">Última etapa</p><h1 className="mt-2 text-2xl font-bold text-slate-950">Revise antes de enviar</h1><p className="mt-2 text-sm leading-6 text-slate-500">Confira suas escolhas. Você pode voltar a qualquer seção para corrigir.</p><div className="mt-6 grid gap-3 sm:grid-cols-3"><div className="rounded-2xl bg-emerald-50 p-4"><strong className="block text-xl text-emerald-800">{answered}</strong><span className="text-xs text-emerald-700">respondidas</span></div><div className="rounded-2xl bg-amber-50 p-4"><strong className="block text-xl text-amber-800">{incomplete}</strong><span className="text-xs text-amber-700">pendentes</span></div><div className="rounded-2xl bg-slate-50 p-4"><strong className="block text-xl text-slate-800">Rascunho</strong><span className="text-xs text-slate-500">salvo no projeto</span></div></div><div className="mt-8 space-y-3">{briefingSections.map((section) => { const sectionAnswered = section.questions.filter((question) => answerIsPresent(responses[question.id])).length; return <div key={section.id} className="rounded-2xl border border-slate-200 p-4"><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-slate-800">{section.title}</span><span className="text-xs text-slate-500">{sectionAnswered}/{section.questions.length}</span></div>{sectionAnswered ? <dl className="mt-3 space-y-2 border-t border-slate-100 pt-3">{section.questions.filter((question) => answerIsPresent(responses[question.id])).map((question) => <div key={question.id}><dt className="text-xs text-slate-400">{question.text}</dt><dd className="text-sm leading-6 text-slate-700">{answerText(responses[question.id])}</dd></div>)}</dl> : null}</div>; })}</div><div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"><button type="button" onClick={onBack} className="min-h-12 rounded-2xl px-5 text-sm font-semibold text-slate-600">← Voltar e corrigir</button><button type="button" disabled={pending} onClick={onFinish} className="min-h-12 rounded-2xl bg-blue-600 px-6 text-sm font-semibold text-white disabled:opacity-50">{pending ? "Enviando…" : `Confirmar envio (${answered} respostas)`}</button></div><p className="mt-4 text-center text-xs text-slate-400">Ao confirmar, o briefing será finalizado e uma versão ficará registrada.</p></div>;
 }
