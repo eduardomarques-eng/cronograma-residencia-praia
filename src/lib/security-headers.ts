@@ -114,7 +114,13 @@ export function buildSecurityHeaders(options: SecurityHeaderOptions = {}): Recor
   return headers;
 }
 
-/** Caminhos que exigem sessão. Avaliados só como filtro antecipado no middleware. */
+/**
+ * Caminhos que exigem sessão. Avaliados só como filtro antecipado no middleware.
+ *
+ * `/admin` cobre clientes, projetos e propostas — as telas canónicas vivem
+ * todas lá dentro. Os três prefixos antigos mantêm-se: são inofensivos e
+ * protegem caso uma rota antiga reapareça.
+ */
 export const PROTECTED_ROUTE_PREFIXES = [
   "/admin",
   "/clientes",

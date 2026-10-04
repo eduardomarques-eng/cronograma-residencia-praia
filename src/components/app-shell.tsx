@@ -3,11 +3,11 @@ import type { ReactNode } from "react";
 import { Brand } from "@/components/brand";
 
 const links = [
-  ["Painel", "/admin/dashboard"],
-  ["Clientes", "/clientes"],
-  ["Projetos", "/projetos"],
+  ["Painel", "/admin"],
+  ["Clientes", "/admin/clientes"],
+  ["Projetos", "/admin/projetos"],
+  ["Propostas", "/admin/propostas"],
   ["Briefings", "/admin/briefing"],
-  ["Propostas", "/propostas"],
   ["Mensagens", "/admin/mensagens"],
   ["Serviços", "/admin/servicos"],
 ];

@@ -45,7 +45,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
   return (
     <AppShell eyebrow="Relacionamento">
       {/* Navegação de contexto: volta à lista, não depende do histórico. */}
-      <Link href="/clientes" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+      <Link href="/admin/clientes" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
         ← Voltar a clientes
       </Link>
 
@@ -97,7 +97,7 @@ export default async function ClientDetailPage({ params }: { params: Promise<{ i
                   <Card key={project.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <Link href={`/projetos/${project.id}`} className="font-semibold text-slate-900 hover:text-blue-700">
+                        <Link href={`/admin/projetos/${project.id}`} className="font-semibold text-slate-900 hover:text-blue-700">
                           {project.name}
                         </Link>
                         <p className="mt-1 text-sm text-slate-500">{project.type ?? "—"}</p>

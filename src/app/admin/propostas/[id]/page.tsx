@@ -39,7 +39,7 @@ export default async function ProposalEditorPage({ params }: { params: Promise<{
 
   return (
     <AppShell eyebrow="Comercial">
-      <Link href="/propostas" className="text-sm font-semibold text-blue-600">← Voltar para propostas</Link>
+      <Link href="/admin/propostas" className="text-sm font-semibold text-blue-600">← Voltar para propostas</Link>
       <div className="mt-6">
         <SectionHeading
           title={initial.title || "Proposta"}
@@ -65,7 +65,7 @@ export default async function ProposalEditorPage({ params }: { params: Promise<{
             </p>
           </div>
           <Link
-            href={`/propostas/${proposal.id}/preview`}
+            href={`/admin/propostas/${proposal.id}/preview`}
             className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
           >
             Visualizar como o cliente

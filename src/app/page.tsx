@@ -146,7 +146,7 @@ export default async function HomePage() {
               <h2 className="font-semibold text-slate-900">Projetos recentes</h2>
               <p className="mt-1 text-sm text-slate-500">Acompanhe o que precisa de atenção.</p>
             </div>
-            <Link href="/projetos" className="text-sm font-semibold text-blue-600">
+            <Link href="/admin/projetos" className="text-sm font-semibold text-blue-600">
               Ver todos
             </Link>
           </div>
@@ -159,7 +159,7 @@ export default async function HomePage() {
                   : "Assim que as migrations e o seed forem aplicados, os projetos do estúdio aparecem aqui."
               }
               action={
-                <Link href="/projetos" className="text-sm font-semibold text-blue-600">
+                <Link href="/admin/projetos" className="text-sm font-semibold text-blue-600">
                   Abrir projetos
                 </Link>
               }
@@ -169,10 +169,10 @@ export default async function HomePage() {
         <Card>
           <h2 className="font-semibold text-slate-900">Atalhos</h2>
           <div className="mt-5 grid gap-3">
-            <Link href="/clientes" className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <Link href="/admin/clientes" className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               Cadastrar cliente <span className="float-right text-slate-400">→</span>
             </Link>
-            <Link href="/projetos" className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <Link href="/admin/projetos" className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               Criar projeto <span className="float-right text-slate-400">→</span>
             </Link>
             <Link href="/login" className="rounded-xl border border-slate-200 p-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
