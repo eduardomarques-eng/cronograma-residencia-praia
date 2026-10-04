@@ -1,0 +1,53 @@
+{
+  // ARQVERTICE FLOW — servidores MCP do projecto.
+  //
+  // SEGURANÇA: este ficheiro NÃO tem segredos. GitHub, Vercel, Supabase,
+  // Prisma, Context7 e Resend autenticam por OAuth no browser quando o VS Code
+  // pede autorização. Nada de tokens aqui — nem no repositório.
+  //
+  // NOTA IMPORTANTE: a entrada "supabase" usa o project_ref que a PRODUÇÃO usa.
+  // Existe outro projecto Supabase (tksdknjssrgpkmkigoib) ligado à integração
+  // automática da Vercel, que NÃO tem as migrations nem a conta ADMIN.
+  // Apontar para o projecto errado dá a impressão de rodar algo sem efeito.
+  //
+  // Depois de editar: reiniciar o VS Code (Developer: Reload Window) para o
+  // cliente MCP ligar os servidores e abrir o OAuth.
+  "servers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=crpmrqyjjxxgskdhnrym&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment"
+    },
+    "prisma": {
+      "type": "http",
+      "url": "https://mcp.prisma.io/mcp"
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "resend": {
+      "type": "http",
+      "url": "https://mcp.resend.com/mcp"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {
+        // A app local corre em http; sem isto o MCP assume localhost:3000.
+        "PLAYWRIGHT_MCP_BROWSER": "chrome"
+      }
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    }
+  }
+}
