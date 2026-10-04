@@ -17,8 +17,24 @@ export async function createClient(input: unknown) {
   return prisma.client.create({ data: normalizeClientData(clientSchema.parse(input)) });
 }
 
-export async function listClients() {
-  return prisma.client.findMany({ orderBy: { name: "asc" } });
+/**
+ * Listagem com busca real no banco. A filtragem acontece na base de dados e
+ * não depois de trazer tudo para a memória — que era o que a barra de pesquisa
+ * fazia antes (nada).
+ */
+export async function listClients(query?: string) {
+  const term = query?.trim();
+  return prisma.client.findMany({
+    where: term
+      ? {
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { email: { contains: term, mode: "insensitive" } },
+          ],
+        }
+      : undefined,
+    orderBy: { name: "asc" },
+  });
 }
 
 export async function getClient(id: string) {

@@ -1,7 +1,19 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/server/db";
 import { getBriefingByToken } from "@/server/services/briefing-service";
 import { GuidedBriefing } from "@/components/briefing/guided-briefing";
+
+/**
+ * Um briefing acedido por token é partilhado por e-mail. Nunca deve ser
+ * indexado por um buscador: o token é a única autorização, e um índice
+ * exponha o briefing de qualquer cliente a quem pesquisasse o nome do
+ * estúdio. Só `noindex` — `nocache` não é uma directiva de robots válida.
+ */
+export const metadata: Metadata = {
+  title: "Briefing",
+  robots: { index: false },
+};
 
 export default async function PublicBriefingPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;

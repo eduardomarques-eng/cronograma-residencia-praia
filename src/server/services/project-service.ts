@@ -17,8 +17,25 @@ export async function getProject(id: string) {
   })) ?? notFound("Projeto");
 }
 
-export async function listProjects() {
-  return prisma.project.findMany({ include: { client: true }, orderBy: { updatedAt: "desc" } });
+/**
+ * Lista com busca real no banco, filtrada no PostgreSQL e não depois de trazida
+ * para a memória. A busca cobre o nome do projeto e o nome do cliente, porque
+ * é por aí que quem procura um projeto costuma entrar.
+ */
+export async function listProjects(query?: string) {
+  const term = query?.trim();
+  return prisma.project.findMany({
+    where: term
+      ? {
+          OR: [
+            { name: { contains: term, mode: "insensitive" } },
+            { client: { name: { contains: term, mode: "insensitive" } } },
+          ],
+        }
+      : undefined,
+    include: { client: true },
+    orderBy: { updatedAt: "desc" },
+  });
 }
 
 export async function updateProject(id: string, input: unknown) {

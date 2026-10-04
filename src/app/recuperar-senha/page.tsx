@@ -20,10 +20,10 @@ export default function RecuperarSenhaPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      if (!response.ok) setError((await response.json().catch(() => ({}))).error ?? "NÃ£o foi possÃ­vel processar o pedido.");
+      if (!response.ok) setError((await response.json().catch(() => ({}))).error ?? "Não foi possível processar o pedido.");
       else setSent(true);
     } catch {
-      setError("NÃ£o foi possÃ­vel processar o pedido. Tente novamente.");
+      setError("Não foi possível processar o pedido. Tente novamente.");
     } finally {
       setPending(false);
     }
@@ -41,10 +41,10 @@ export default function RecuperarSenhaPage() {
         {sent ? (
           <>
             <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              Se existir uma conta com este e-mail, enviÃ¡mos as instruÃ§Ãµes para redefinir a senha. Verifique tambÃ©m a pasta de spam.
+              Se existir uma conta com este e-mail, enviámos as instruções para redefinir a senha. Verifique também a pasta de spam.
             </p>
             <Link href="/login" className="mt-6 block text-center text-sm font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700">
-              Voltar ao inÃ­cio de sessÃ£o
+              Voltar ao início de sessão
             </Link>
           </>
         ) : (
@@ -66,11 +66,11 @@ export default function RecuperarSenhaPage() {
 
               {error ? <p role="alert" className="mt-4 text-sm text-rose-600">{error}</p> : null}
 
-              <Button type="submit" disabled={pending} className="mt-6 w-full">{pending ? "Enviandoâ€¦" : "Enviar link"}</Button>
+              <Button type="submit" disabled={pending} className="mt-6 w-full">{pending ? "Enviando…" : "Enviar link"}</Button>
             </form>
 
             <Link href="/login" className="mt-5 block text-center text-sm text-slate-500 underline underline-offset-2 hover:text-slate-700">
-              Voltar ao inÃ­cio de sessÃ£o
+              Voltar ao início de sessão
             </Link>
           </>
         )}

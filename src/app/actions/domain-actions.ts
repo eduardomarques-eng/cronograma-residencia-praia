@@ -32,63 +32,75 @@ import type { SignatureStatusName } from "@/lib/signature";
 export async function saveClientAction(input: unknown) {
   await requireRole("ADMIN");
   const result = await createClient(input);
-  revalidatePath("/");
+  revalidatePath("/admin/clientes");
+  revalidatePath("/admin");
   return result;
 }
 
 export async function editClientAction(id: string, input: unknown) {
   await requireRole("ADMIN");
   const result = await updateClient(id, input);
-  revalidatePath("/");
+  revalidatePath("/admin/clientes");
+  revalidatePath(`/admin/clientes/${id}`);
+  revalidatePath("/admin");
   return result;
 }
 
 export async function saveProjectAction(input: unknown) {
   await requireRole("ADMIN");
   const result = await createProject(input);
-  revalidatePath("/");
+  revalidatePath("/admin/projetos");
+  revalidatePath("/admin");
   return result;
 }
 
 export async function editProjectAction(id: string, input: unknown) {
   await requireRole("ADMIN");
   const result = await updateProject(id, input);
-  revalidatePath("/");
+  revalidatePath("/admin/projetos");
+  revalidatePath(`/admin/projetos/${id}`);
+  revalidatePath("/admin");
   return result;
 }
 
 export async function saveScheduleStageAction(input: unknown) {
   await requireRole("ADMIN");
   const result = await createScheduleStage(input);
-  revalidatePath("/");
+  revalidatePath("/admin/projetos");
+  revalidatePath("/admin");
   return result;
 }
 
 export async function editScheduleStageAction(id: string, input: unknown) {
   await requireRole("ADMIN");
   const result = await updateScheduleStage(id, input);
-  revalidatePath("/");
+  revalidatePath("/admin/projetos");
+  revalidatePath("/admin");
   return result;
 }
 
 export async function savePaymentAction(input: unknown) {
   await requireRole("ADMIN");
   const result = await createProjectPayment(input);
-  revalidatePath("/");
+  revalidatePath("/admin/projetos");
+  revalidatePath("/admin");
   return result;
 }
 
 export async function editPaymentAction(projectId: string, id: string, input: unknown) {
   await requireRole("ADMIN");
   const result = await updateProjectPayment(projectId, id, input);
-  revalidatePath("/");
+  revalidatePath("/admin/projetos");
+  revalidatePath(`/admin/projetos/${projectId}`);
+  revalidatePath("/admin");
   return result;
 }
 
 export async function saveBriefingAction(projectId: string, input: unknown) {
   await requireProjectAccess(projectId);
   const result = await saveBriefingResponses(projectId, input);
-  revalidatePath("/");
+  revalidatePath(`/admin/projetos/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return result;
 }
 
@@ -119,13 +131,13 @@ export async function removeBriefingVisualOptionAction(id: string) {
 
 export async function createBriefingLinkAction(projectId: string) {
   const result = await createBriefingLink(projectId);
-  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/admin/projetos/${projectId}`);
   return result;
 }
 
 export async function revokeBriefingLinkAction(projectId: string) {
   const result = await revokeBriefingLink(projectId);
-  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/admin/projetos/${projectId}`);
   return result;
 }
 
@@ -143,7 +155,7 @@ export async function finishBriefingTokenAction(token: string) {
 
 export async function updateReportVisibilityAction(projectId: string, reportId: string, status: "PREPARING" | "INTERNAL" | "RELEASED" | "ARCHIVED") {
   const result = await updateReportVisibility(projectId, reportId, status);
-  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/admin/projetos/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return result;
 }
@@ -153,34 +165,34 @@ export async function uploadProjectDocumentAction(projectId: string, formData: F
   const visibility = formData.get("visibility");
   if (!file || typeof file !== "object" || !("arrayBuffer" in file) || (visibility !== "INTERNAL" && visibility !== "CLIENT")) throw new Error("Arquivo ou visibilidade inválidos.");
   const result = await uploadProjectDocument(projectId, file as { name: string; size: number; type: string; arrayBuffer(): Promise<ArrayBuffer> }, visibility);
-  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/admin/projetos/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return result;
 }
 
 export async function archiveProjectDocumentAction(projectId: string, documentId: string) {
   const result = await archiveProjectDocument(documentId);
-  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath(`/admin/projetos/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return result;
 }
 
 export async function createProposalAction(projectId: string) {
   const result = await createProposal(projectId);
-  revalidatePath("/propostas");
-  revalidatePath(`/projetos/${projectId}`);
+  revalidatePath("/admin/propostas");
+  revalidatePath(`/admin/projetos/${projectId}`);
   return result;
 }
 
 export async function createProposalLinkAction(proposalId: string) {
   const result = await createProposalLink(proposalId);
-  revalidatePath("/propostas");
+  revalidatePath("/admin/propostas");
   return result;
 }
 
 export async function saveProposalVersionAction(proposalId: string, input: Parameters<typeof saveProposalVersion>[1]) {
   const result = await saveProposalVersion(proposalId, input);
-  revalidatePath("/propostas");
+  revalidatePath("/admin/propostas");
   return result;
 }
 
@@ -234,13 +246,13 @@ export async function listNotificationEventsAction(entityId: string) {
 
 export async function requestContractSignatureAction(contractId: string) {
   const result = await requestContractSignature(contractId);
-  revalidatePath("/propostas");
+  revalidatePath("/admin/propostas");
   return result;
 }
 
 export async function advanceSignatureAction(contractId: string, status: SignatureStatusName) {
   const result = await advanceSignatureStatus(contractId, status);
-  revalidatePath("/propostas");
+  revalidatePath("/admin/propostas");
   return result;
 }
 
@@ -268,14 +280,14 @@ export async function replacePackageItemsAction(packageId: string, serviceIds: s
 }
 export async function sendProposalWhatsAppAction(proposalId: string) {
   const result = await sendProposalWhatsApp(proposalId);
-  revalidatePath(`/propostas/${proposalId}`);
-  revalidatePath("/propostas");
+  revalidatePath(`/admin/propostas/${proposalId}`);
+  revalidatePath("/admin/propostas");
   return result;
 }
 
 export async function generateContractAction(proposalId: string) {
   const result = await generateContract(proposalId);
-  revalidatePath(`/propostas/${proposalId}`);
+  revalidatePath(`/admin/propostas/${proposalId}`);
   return result;
 }
 
@@ -286,9 +298,9 @@ export async function generateContractAction(proposalId: string) {
  */
 export async function convertProposalAction(proposalId: string) {
   const result = await convertApprovedProposal(proposalId);
-  revalidatePath(`/propostas/${proposalId}`);
-  revalidatePath("/propostas");
-  revalidatePath(`/projetos/${result.projectId}`);
+  revalidatePath(`/admin/propostas/${proposalId}`);
+  revalidatePath("/admin/propostas");
+  revalidatePath(`/admin/projetos/${result.projectId}`);
   return result;
 }
 

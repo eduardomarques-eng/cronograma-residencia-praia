@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/section-heading";
-import { Progress } from "@/components/ui/progress";
+import { SearchForm } from "@/components/search-form";
 import { requirePageRole } from "@/server/auth";
 import { listProjects } from "@/server/services/project-service";
 
@@ -18,22 +18,32 @@ const STATUS_TONE: Record<string, "blue" | "green" | "amber" | "neutral"> = {
 };
 
 /**
- * Lista real de projetos, lida do banco.
+ * Lista real de projetos, lida do banco, com busca no servidor.
  *
  * O progresso NÃO é recalculado aqui: `getProjectSchedule` é quem sabe das
  * etapas. Enquanto o serviço de leitura não expõe isso, mostramos o estado do
  * projeto sem inventar percentagem — um "0%" fixo seria pior do que nada.
  */
-export default async function ProjectsPage() {
+export default async function ProjectsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requirePageRole("ADMIN");
-  const projects = await listProjects();
+  const { q = "" } = await searchParams;
+  const projects = await listProjects(q);
 
   return (
     <AppShell eyebrow="Portfólio">
       <SectionHeading title="Projetos" description="Cada projeto com o seu cliente, estado e acesso direto." />
 
+      <SearchForm action="/admin/projetos" query={q} placeholder="Buscar por projeto ou cliente" />
+
       {projects.length === 0 ? (
-        <EmptyState title="Nenhum projeto" description="Assim que criar um projeto, ele aparece aqui." />
+        <EmptyState
+          title={q ? `Nada encontrado para "${q}"` : "Nenhum projeto"}
+          description={
+            q
+              ? "Tente outra palavra, ou limpe a busca para ver todos os projetos."
+              : "Assim que criar um projeto, ele aparece aqui."
+          }
+        />
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {projects.map((project) => (
@@ -43,7 +53,8 @@ export default async function ProjectsPage() {
                   <Link href={`/admin/projetos/${project.id}`} className="font-semibold text-slate-900 hover:text-blue-700">
                     {project.name}
                   </Link>
-                  <p className="mt-1 text-sm text-slate-500">{"type" in project && project.type ? project.type : "Sem tipo definido"}</p>
+                  <p className="mt-1 text-sm text-slate-500">{project.type || "Sem tipo definido"}</p>
+                  <p className="mt-1 text-sm text-slate-500">Cliente: {project.client.name}</p>
                 </div>
                 <Badge tone={STATUS_TONE[project.status] ?? "neutral"}>{project.status}</Badge>
               </div>

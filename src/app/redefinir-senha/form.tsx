@@ -17,7 +17,7 @@ export function RedefinirSenhaForm({ token }: { token: string }) {
     event.preventDefault();
     setError("");
     if (password !== confirm) {
-      setError("As senhas nÃ£o coincidem.");
+      setError("As senhas não coincidem.");
       return;
     }
     setPending(true);
@@ -27,13 +27,13 @@ export function RedefinirSenhaForm({ token }: { token: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ token, password }),
       });
-      if (!response.ok) setError((await response.json().catch(() => ({}))).error ?? "NÃ£o foi possÃ­vel redefinir a senha.");
+      if (!response.ok) setError((await response.json().catch(() => ({}))).error ?? "Não foi possível redefinir a senha.");
       else {
         setDone(true);
         setTimeout(() => router.push("/login"), 2500);
       }
     } catch {
-      setError("NÃ£o foi possÃ­vel redefinir a senha. Tente novamente.");
+      setError("Não foi possível redefinir a senha. Tente novamente.");
     } finally {
       setPending(false);
     }
@@ -50,7 +50,7 @@ export function RedefinirSenhaForm({ token }: { token: string }) {
 
         {!token ? (
           <>
-            <p role="alert" className="mt-3 text-sm text-rose-600">Este link de redefiniÃ§Ã£o Ã© invÃ¡lido ou estÃ¡ incompleto.</p>
+            <p role="alert" className="mt-3 text-sm text-rose-600">Este link de redefinição é inválido ou está incompleto.</p>
             <Link href="/recuperar-senha" className="mt-6 block text-center text-sm font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700">
               Pedir um novo link
             </Link>
@@ -58,7 +58,7 @@ export function RedefinirSenhaForm({ token }: { token: string }) {
         ) : done ? (
           <>
             <p className="mt-3 text-sm leading-relaxed text-emerald-700">
-              Senha alterada com sucesso. Por seguranÃ§a, as sessÃµes abertas foram encerradas. A redireccionar para o inÃ­cio de sessÃ£oâ€¦
+              Senha alterada com sucesso. Por segurança, as sessões abertas foram encerradas. A redireccionar para o início de sessão…
             </p>
             <Link href="/login" className="mt-6 block text-center text-sm font-semibold text-blue-600 underline underline-offset-2 hover:text-blue-700">
               Entrar agora
@@ -96,7 +96,7 @@ export function RedefinirSenhaForm({ token }: { token: string }) {
 
               {error ? <p role="alert" className="mt-4 text-sm text-rose-600">{error}</p> : null}
 
-              <Button type="submit" disabled={pending} className="mt-6 w-full">{pending ? "A guardarâ€¦" : "Guardar nova senha"}</Button>
+              <Button type="submit" disabled={pending} className="mt-6 w-full">{pending ? "A guardar…" : "Guardar nova senha"}</Button>
             </form>
           </>
         )}

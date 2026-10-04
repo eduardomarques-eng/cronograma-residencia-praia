@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import type { Metadata } from "next";
 import { Card } from "@/components/ui/card";
 import { ProposalDecision } from "@/components/proposals/proposal-decision";
 import { ProposalPresentation } from "@/components/proposals/proposal-presentation";
@@ -8,6 +9,16 @@ import { RateLimitError, resolveClientKey } from "@/lib/proposal-access";
 import { formatCurrencyBRL } from "@/lib/contract-template";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * A proposta é partilhada por token. O token é a única autorização, por isso
+ * a rota nunca pode ser indexada. Só `noindex` — `nocache` não é uma
+ * directiva de robots válida.
+ */
+export const metadata: Metadata = {
+  title: "Proposta",
+  robots: { index: false },
+};
 
 /**
  * Página pública da proposta.
