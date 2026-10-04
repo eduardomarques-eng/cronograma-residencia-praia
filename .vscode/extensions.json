@@ -1,5 +1,13 @@
 {
-    "recommendations": [
-        "rooveterinaryinc.roo-cline"
-    ]
+  // Só extensões com utilidade comprovada neste projecto.
+  // Prettier NÃO é recomendado: o projecto não tem Prettier instalado
+  // (nem em package.json), e a formatação é feita pelo ESLint.
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "bradlc.vscode-tailwindcss",
+    "prisma.prisma",
+    "rooveterinaryinc.roo-cline"
+  ]
 }
