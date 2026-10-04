@@ -25,7 +25,9 @@ test.describe("isolamento do portal", () => {
       await page.getByLabel("E-mail").fill(clientEmail!);
       await page.getByLabel("Senha").fill(clientPassword!);
       await page.getByRole("button", { name: "Entrar" }).click();
-      await expect(page).toHaveURL("/");
+      // A entrada por papel manda o CLIENT para o portal. Isto já não pode
+      // esperar "/" como antes da Fase 2, quando "/" era o painel do cliente.
+      await expect(page).toHaveURL(/\/portal/);
     });
 
     test("permite o projeto autorizado", async ({ page }) => {

@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
  * Entrada da aplicação. Só decide o destino — não tem painel.
  *
  * Antes esta rota tinha um segundo painel com métricas fixas ("—"), enquanto o
- * painel real vivia em /admin: dois dashboards, um deles mentindo. Agora o
- * ADMIN é Redirecte para /admin e esta página desaparece para quem tem sessão.
+ * painel real vivia em /admin: dois dashboards, um deles mentindo. Agora quem
+ * tem sessão é redireccionado para a sua área e esta página desaparece.
  */
 export default async function HomePage() {
   const user = await currentUser();
