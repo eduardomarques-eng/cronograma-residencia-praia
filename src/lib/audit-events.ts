@@ -27,6 +27,9 @@ export const AUDIT_ACTION = {
   CONVERSION_COMPLETED: "CONVERSION_COMPLETED",
   PAYMENTS_GENERATED: "PAYMENTS_GENERATED",
   DOCUMENT_STORED: "DOCUMENT_STORED",
+  BRIEFING_ANSWER_SAVED: "BRIEFING_ANSWER_SAVED",
+  BRIEFING_FINALIZED: "BRIEFING_FINALIZED",
+  BRIEFING_REOPENED: "BRIEFING_REOPENED",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTION)[keyof typeof AUDIT_ACTION];
@@ -53,6 +56,9 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   CONVERSION_COMPLETED: "Conversão concluída",
   PAYMENTS_GENERATED: "Parcelas geradas",
   DOCUMENT_STORED: "Documento armazenado",
+  BRIEFING_ANSWER_SAVED: "Resposta do briefing alterada",
+  BRIEFING_FINALIZED: "Briefing confirmado pelo cliente",
+  BRIEFING_REOPENED: "Briefing reaberto pelo estúdio",
 };
 
 /** Entidades sobre as quais a auditoria pode recair. */
@@ -66,6 +72,8 @@ export const AUDIT_ENTITY = {
   PROJECT: "Project",
   PAYMENT: "Payment",
   PROJECT_DOCUMENT: "ProjectDocument",
+  // Tópico 4A: quem respondeu, quando e o que mudou.
+  BRIEFING: "Briefing",
 } as const;
 
 export type AuditEntity = (typeof AUDIT_ENTITY)[keyof typeof AUDIT_ENTITY];

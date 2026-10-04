@@ -252,6 +252,8 @@ model ProjectDocument {
   source       DocumentSource    @default(UPLOAD)
   proposalId   String?           @db.Uuid
   contractId   String?           @db.Uuid
+  // Tópico 4A: quando o ficheiro é uma referência do briefing, liga-se a ela.
+  briefingReferences BriefingReference[]
   // Tópico 39: impede reenvio do mesmo artefato comercial. A chave é estável
   // por construção (ex.: "proposta:v3", "contrato:assinatura"), então
   // reexecutar a automação não duplica o documento.
@@ -351,11 +353,14 @@ model Briefing {
   version     Int      @default(1)
   submittedAt DateTime?
   finalizedAt DateTime?
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   revisions   BriefingRevision[]
   accessLinks BriefingAccessLink[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Tópico 4A: o que o cliente respondeu para além do texto.
+  references  BriefingReference[]
+  audioNotes  BriefingAudioNote[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 }
 
 model BriefingAccessLink {
@@ -399,6 +404,87 @@ model BriefingVisualOption {
 
   @@index([questionId, sortOrder])
   @@unique([questionId, value])
+}
+
+// Tópico 4A — o que o cliente sobre as referências visuais.
+//
+// `BriefingVisualOption` guarda as imagens que o ADMIN publica nas perguntas.
+// Este guarda o que o CLIENTE respondeu: a referência que enviou, o que gosta e
+// o que não gosta nela, e se continua de pé. Sem esta distinção, uma imagem
+// aprovada é lida inteira como um "sim" — e o cliente pode gostar da luz e
+// detestar o mobiliário.
+//
+// A resposta do cliente é `likes`/`dislikes`. A opinião do profissional entra em
+// `professionalNote` e não reescreve nada do que o cliente disse.
+model BriefingReference {
+  id               String   @id @default(uuid()) @db.Uuid
+  briefingId       String   @db.Uuid
+  questionId       String
+  // Chave no storage quando é um ficheiro; null quando é uma opção do catálogo.
+  storageKey       String?
+  documentId       String?  @db.Uuid
+  visualOptionId   String?  @db.Uuid
+  fileName         String?
+  mimeType         String?
+  sizeBytes        BigInt?
+  // REFERENCIA, FOTO_IMOVEL, DOCUMENTO — ou outra categoria declarada pela
+  // pergunta. Texto livre de propósito: o briefing cresce sem migration.
+  category         String   @default("REFERENCIA")
+  // O que o cliente diz que gosta e o que diz que não gosta, desta referência.
+  likes            String?  @db.Text
+  dislikes         String?  @db.Text
+  // Ambiente do programa a que a referência se refere, quando se aplica.
+  environmentId    String?
+  selected         Boolean  @default(true)
+  discarded        Boolean  @default(false)
+  professionalNote String?  @db.Text
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  briefing         Briefing             @relation(fields: [briefingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  document         ProjectDocument?     @relation(fields: [documentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([briefingId, category])
+  @@index([briefingId, createdAt])
+}
+
+// Tópico 4A — resposta por áudio.
+//
+// O áudio original NUNCA é apagado: a transcrição automática e a corrigida pelo
+// cliente são colunas separadas do mesmo registo. Se a transcrição automática
+// falhar, o cliente ainda pode ouvir e escrever — e o áudio continua lá para
+// o profissional.
+enum BriefingAudioStatus {
+  UPLOADED
+  TRANSCRIBING
+  TRANSCRIBED
+  FAILED
+}
+
+model BriefingAudioNote {
+  id           String              @id @default(uuid()) @db.Uuid
+  briefingId   String              @db.Uuid
+  questionId   String
+  storageKey   String
+  mimeType     String
+  sizeBytes    BigInt?
+  status       BriefingAudioStatus @default(UPLOADED)
+  // Identificador do serviço que transcreveu, quando existe. Null significa
+  // "sem provider configurado" — nunca "transcrito".
+  provider     String?
+  // Texto exacto como saiu do provider. Não é a resposta final.
+  transcript   String?             @db.Text
+  // Texto que o cliente corrigiu ou confirmou.
+  reviewedText String?             @db.Text
+  errorMessage String?             @db.Text
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  briefing     Briefing @relation(fields: [briefingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([briefingId, questionId])
+  @@index([status])
 }
 
 model Proposal {

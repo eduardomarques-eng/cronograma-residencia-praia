@@ -7,7 +7,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const { document, body } = await downloadProjectDocument(id);
-    return new NextResponse(body, {
+    // `Uint8Array` e não `Buffer`: o corpo de uma Response aceita o primeiro.
+    return new NextResponse(new Uint8Array(body), {
       headers: {
         "Content-Type": document.mimeType ?? "application/octet-stream",
         "Content-Disposition": `attachment; filename="${document.name.replace(/["\r\n]/g, "_")}"`,
