@@ -21,8 +21,21 @@ export type EmailResult = {
   error?: string;
 };
 
+/**
+ * URL pública da aplicação, usada para montar o link de recuperação.
+ *
+ * Antes caía em `http://localhost:3000`. Em produção isso significava enviar ao
+ * cliente um link que não existe — o e-mail saía, o link não funcionava, e nada
+ * indicava o erro. Agora a ausência de `NEXT_PUBLIC_APP_URL` é um erro explícito
+ * em produção e só há fallback em desenvolvimento, onde o localhost é o certo.
+ */
 function appUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_APP_URL não configurada: os links de recuperação ficariam inválidos em produção.");
+  }
+  return "http://localhost:3000";
 }
 
 /**

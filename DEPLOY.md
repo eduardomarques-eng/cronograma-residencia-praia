@@ -57,9 +57,13 @@ publica uma app que falha em todas as leituras.
 1. Settings → Environment Variables, confirme `DATABASE_URL`
 2. Instale o Vercel CLI: `npm i -g vercel`
 3. `vercel link`  (associe ao projecto)
-4. `vercel env pull .env.local`  (descarrega as variáveis)
+4. `vercel env pull .env.local --environment=production`  (descarrega as variáveis
+   em `.env.local`, que o `.gitignore` já exclui — **nunca** em `.env`)
 5. `npx prisma migrate deploy`
 6. `npm run db:seed`  (cria o ADMIN e os templates)
+
+> No Windows, invoque `vercel.cmd`, `npx.cmd` e `npm.cmd`. A Execution Policy
+> bloqueia os wrappers `.ps1` e o script falha antes de começar.
 
 **Opção B — a partir da máquina:**
 ```bash
@@ -68,7 +72,7 @@ npx prisma migrate deploy
 npm run db:seed
 ```
 
-São **13 migrations**. Todas são aditivas (nenhum `DROP`), por isso não
+São **14 migrations**. Todas são aditivas (nenhum `DROP`), por isso não
 destroem dados.
 
 ### Supabase: usar o *session pooler*, nunca o *transaction pooler*

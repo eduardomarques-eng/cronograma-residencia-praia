@@ -1,10 +1,10 @@
-# =============================================================================
+﻿# =============================================================================
 # Preparacao do ARQVERTICE FLOW na Vercel.
 #
-# Faz, por ordem: liga ao projecto, descarrega as variaveis, aplica as 13
+# Faz, por ordem: liga ao projecto, descarrega as variaveis, aplica as 14
 # migrations e cria o utilizador ADMIN.
 #
-# Pré-requisitos (UMA VEZ):
+# PrÃ©-requisitos (UMA VEZ):
 #   1. npm i -g vercel
 #   2. vercel login          <-- interactivo, tem de ser feito no navegador
 #   3. Defina na Vercel (Settings > Environment Variables, Production):
@@ -30,11 +30,11 @@ Write-Host "Raiz: $raiz"
 
 # --- 0. Autenticacao ---------------------------------------------------------
 Passo "Verificando autenticacao"
-& vercel whoami 2>&1 | ForEach-Object { Write-Host "  $_" }
+& vercel.cmd whoami 2>&1 | ForEach-Object { Write-Host "  $_" }
 
 # --- 1. Ligar ao projecto ----------------------------------------------------
 Passo "Ligando ao projecto (escolha o ja existente quando perguntar)"
-& vercel link --yes 2>&1 | ForEach-Object { Write-Host "  $_" }
+& vercel.cmd link --yes 2>&1 | ForEach-Object { Write-Host "  $_" }
 
 if (-not (Test-Path ".vercel\project.json")) {
     Write-Host ""
@@ -45,7 +45,7 @@ if (-not (Test-Path ".vercel\project.json")) {
 
 # --- 2. Descarregar variaveis ------------------------------------------------
 Passo "Descarregando variaveis de ambiente"
-& vercel env pull .env.local --environment=production 2>&1 | ForEach-Object { Write-Host "  $_" }
+& vercel.cmd env pull .env.local --environment=production --yes 2>&1 | ForEach-Object { Write-Host "  $_" }
 
 if (-not (Test-Path ".env.local")) {
     Write-Host "Nao foi possivel descarregar o .env.local" -ForegroundColor Red
@@ -63,10 +63,10 @@ if (-not $temDb) {
 
 # --- 3. Migrations -----------------------------------------------------------
 Passo "Gerando Prisma Client"
-& npx prisma generate 2>&1 | ForEach-Object { Write-Host "  $_" }
+& npx.cmd prisma generate 2>&1 | ForEach-Object { Write-Host "  $_" }
 
-Passo "Aplicando as 13 migrations"
-& npx prisma migrate deploy 2>&1 | ForEach-Object { Write-Host "  $_" }
+Passo "Aplicando as migrations"
+& npx.cmd prisma migrate deploy 2>&1 | ForEach-Object { Write-Host "  $_" }
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
@@ -75,11 +75,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Passo "Estado das migrations"
-& npx prisma migrate status 2>&1 | ForEach-Object { Write-Host "  $_" }
+& npx.cmd prisma migrate status 2>&1 | ForEach-Object { Write-Host "  $_" }
 
 # --- 4. Seed -----------------------------------------------------------------
 Passo "Criando o utilizador ADMIN"
-& npm run db:seed 2>&1 | ForEach-Object { Write-Host "  $_" }
+& npm.cmd run db:seed 2>&1 | ForEach-Object { Write-Host "  $_" }
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
@@ -90,3 +90,4 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "O seed falhou. Confirme SEED_ADMIN_EMAIL e SEED_ADMIN_PASSWORD na Vercel." -ForegroundColor Yellow
     exit 1
 }
+

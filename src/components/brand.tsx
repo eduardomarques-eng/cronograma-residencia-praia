@@ -1,9 +1,19 @@
+import Image from "next/image";
+
 /**
- * Marca da ARQVERTICE: logótipo + nome completo.
+ * Dimensões reais de `public/logo.png` (1000x1000). Declaradas para o
+ * `next/image` nunca ter de adivinhar a proporção.
+ */
+const LOGO_SIZE = { width: 1000, height: 1000 } as const;
+
+/**
+ * Marca da ARQVERTICE: logotipo oficial + nome.
  *
- * Usada no ecrã de login e na recuperação de senha, para que os dois pontos de
- * entrada tenham exatamente a mesma identidade. `compact` reduz a marca para
- * ecrãs pequenos; `className` deixa o invólucro ocupar a área pretendida.
+ * A imagem vem de `public/logo.png` — o ficheiro entregue pelo ADMIN. Não é
+ * redesenhada em CSS nem recriada em SVG: é usada como foi fornecida e apenas
+ * redimensionada pelo `next/image`, que preserva a proporção.
+ *
+ * Usada no ecrã de login, na recuperação de senha e como marca de água.
  */
 export function Brand({
   compact = false,
@@ -22,15 +32,13 @@ export function Brand({
       className={`inline-flex items-center gap-3 ${className}`}
       {...(decorative ? { "aria-hidden": true as const } : {})}
     >
-      <span
-        aria-hidden="true"
-        className={`grid shrink-0 place-items-center rounded-2xl bg-slate-900 ${compact ? "h-9 w-9" : "h-11 w-11"}`}
-      >
-        <svg viewBox="0 0 64 64" className={compact ? "h-5 w-5" : "h-6 w-6"} fill="none">
-          <path d="M18 45V19h8v18h20v8H18Z" fill="#fff" />
-          <path d="M34 19h12v8H34z" fill="#2563eb" />
-        </svg>
-      </span>
+      <Image
+        src="/logo.png"
+        alt={decorative ? "" : "ARQVERTICE Arquitetura e Engenharia"}
+        {...LOGO_SIZE}
+        priority
+        className={`shrink-0 object-contain ${compact ? "h-9 w-9" : "h-12 w-12"}`}
+      />
       <span className="flex flex-col leading-tight">
         <span className={`font-bold tracking-tight text-slate-900 ${compact ? "text-base" : "text-lg"}`}>
           ARQVERTICE
