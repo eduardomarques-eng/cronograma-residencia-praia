@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { SectionHeading } from "@/components/section-heading";
+import { StageStatusControl } from "@/components/schedule/stage-status-control";
 import { requirePageProjectAccess } from "@/server/auth";
 import { kanbanBoard, type KanbanColumnId } from "@/server/services/schedule-service";
+import { alertDetail, DUE_SOON_DAYS } from "@/lib/schedule-alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +16,23 @@ const COLUMN_TONE: Record<KanbanColumnId, "red" | "neutral" | "blue" | "green"> 
   NOT_STARTED: "neutral",
   IN_PROGRESS: "blue",
   COMPLETED: "green",
+};
+
+/** Prioridade derivada da regra única de alertas — não é coluna na base. */
+const PRIORITY_TONE = { ALTA: "red", MEDIA: "amber", NORMAL: "neutral" } as const;
+
+/**
+ * Cor do texto do alerta, por valor.
+ *
+ * Não pode ser `text-${tone}-700`: o Tailwind só gera as classes que encontra
+ * no código, e uma classe montada em runtime não existe no CSS final.
+ */
+const ALERT_TEXT: Record<string, string> = {
+  green: "text-emerald-700",
+  red: "text-rose-700",
+  amber: "text-amber-700",
+  blue: "text-blue-700",
+  neutral: "text-slate-500",
 };
 
 function formatDate(value: Date | null) {
@@ -34,16 +53,28 @@ export default async function CronogramaPage({ params }: { params: Promise<{ id:
 
       <SectionHeading
         title={`Cronograma — ${board.project.name}`}
-        description="Cada etapa aparece numa única coluna, pelo seu estado real."
+        description="Cada etapa aparece numa única coluna, pelo seu estado real. O aviso vem da regra única de alertas."
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge tone={board.totals.overdue > 0 ? "red" : "green"}>
               {board.totals.overdue > 0 ? `${board.totals.overdue} atrasada(s)` : "Sem atrasos"}
             </Badge>
+            {board.alerts.blocked > 0 ? <Badge tone="amber">{board.alerts.blocked} bloqueada(s)</Badge> : null}
+            {board.alerts.dueSoon > 0 ? (
+              <Badge tone="amber">
+                {board.alerts.dueSoon} com prazo ≤ {DUE_SOON_DAYS} dias
+              </Badge>
+            ) : null}
             <Badge tone="blue">{board.totals.completion}%</Badge>
           </div>
         }
       />
+
+      <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
+        <Link href={`/admin/projetos/${id}/relatorio`} className="font-semibold text-blue-600 hover:text-blue-700">
+          Relatório do cronograma →
+        </Link>
+      </div>
 
       {board.totals.stages === 0 ? (
         <Card className="mt-6 border-dashed text-center">
@@ -55,7 +86,7 @@ export default async function CronogramaPage({ params }: { params: Promise<{ id:
         <div className="-mx-5 mt-6 overflow-x-auto px-5 pb-4 md:-mx-10 md:px-10">
           <div className="flex min-w-max gap-4">
             {board.columns.map((column) => (
-              <section key={column.id} className="w-72 shrink-0" aria-label={column.label}>
+              <section key={column.id} className="w-80 shrink-0" aria-label={column.label}>
                 <header className="flex items-center justify-between gap-2">
                   <h2 className="text-sm font-semibold text-slate-700">{column.label}</h2>
                   <Badge tone={COLUMN_TONE[column.id]}>{column.cards.length}</Badge>
@@ -69,7 +100,10 @@ export default async function CronogramaPage({ params }: { params: Promise<{ id:
                   ) : (
                     column.cards.map((card) => (
                       <Card key={card.id}>
-                        <p className="text-sm font-semibold text-slate-900">{card.name}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-900">{card.name}</p>
+                          <Badge tone={PRIORITY_TONE[card.priority]}>{card.priority}</Badge>
+                        </div>
                         {card.discipline ? (
                           <p className="mt-1 text-xs text-slate-500">{card.discipline}</p>
                         ) : null}
@@ -97,6 +131,16 @@ export default async function CronogramaPage({ params }: { params: Promise<{ id:
                             <dt>Prazo</dt>
                             <dd className="text-slate-700">{formatDate(card.dueDate)}</dd>
                           </div>
+                          <div className="flex justify-between gap-2">
+                            <dt>Status</dt>
+                            <dd className="text-slate-700">{card.statusLabel}</dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt>Alerta</dt>
+                            <dd className={ALERT_TEXT[card.alert.tone]}>
+                              {card.alert.label} · {alertDetail(card.alert)}
+                            </dd>
+                          </div>
                           {card.dependencyName ? (
                             <div className="flex justify-between gap-2">
                               <dt>Depende de</dt>
@@ -104,6 +148,13 @@ export default async function CronogramaPage({ params }: { params: Promise<{ id:
                             </div>
                           ) : null}
                         </dl>
+
+                        <StageStatusControl
+                          stageId={card.id}
+                          stageName={card.name}
+                          current={card.status}
+                          allowed={card.allowedTransitions}
+                        />
                       </Card>
                     ))
                   )}

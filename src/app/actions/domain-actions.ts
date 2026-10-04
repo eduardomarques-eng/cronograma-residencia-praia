@@ -4,12 +4,13 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient, updateClient } from "@/server/services/client-service";
 import { createProject, updateProject } from "@/server/services/project-service";
-import { createScheduleStage, updateScheduleStage } from "@/server/services/schedule-service";
+import { createScheduleStage, updateScheduleStage, updateScheduleStageStatus } from "@/server/services/schedule-service";
 import { createProjectPayment, updateProjectPayment } from "@/server/services/payment-service";
 import { saveBriefingResponses } from "@/server/services/briefing-service";
 import { finishBriefing, reopenBriefing } from "@/server/services/briefing-service";
 import { removeVisualOption, saveVisualOption } from "@/server/services/briefing-service";
 import { requireProjectAccess, requireRole } from "@/server/auth";
+import { DomainError } from "@/server/errors";
 import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@/server/services/briefing-link-service";
 import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
 import { updateReportVisibility } from "@/server/services/report-visibility-service";
@@ -69,6 +70,31 @@ export async function saveScheduleStageAction(input: unknown) {
   revalidatePath("/admin/projetos");
   revalidatePath("/admin");
   return result;
+}
+
+/**
+ * Tópico 3 — transição de estado de uma etapa.
+ *
+ * A autorização fica no serviço (`updateScheduleStageStatus`), que também valida
+ * a transição e a dependência pendente. Aqui só se revalida a página e se
+ * traduz o resultado para a interface — o frontend nunca decide sozinho.
+ */
+export async function moveStageStatusAction(stageId: string, status: string) {
+  try {
+    await requireRole("ADMIN");
+    await updateScheduleStageStatus(stageId, status);
+    revalidatePath("/admin/projetos");
+    revalidatePath("/admin");
+    return { ok: true as const };
+  } catch (error) {
+    return {
+      ok: false as const,
+      message:
+        error instanceof DomainError
+          ? error.message
+          : "Não foi possível mudar o estado da etapa.",
+    };
+  }
 }
 
 export async function editScheduleStageAction(id: string, input: unknown) {

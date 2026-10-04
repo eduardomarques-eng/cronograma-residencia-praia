@@ -1,40 +1,17 @@
 import { prisma } from "@/server/db";
 import { requireRole } from "@/server/auth";
+import { averageCompletion, completionOf, progressByDiscipline, stageCompletion } from "@/lib/progress";
+import { stageAlert, summarizeAlerts } from "@/lib/schedule-alerts";
 
 /**
- * Regra ÚNICA de progresso.
+ * REGRA ÚNICA DE PROGRESSO — a implementação está em `@/lib/progress`.
  *
- * Só existe fonte de verdade: `ScheduleStage.completion` (0–100) guardado por
- * etapa. O progresso da disciplina é a média das suas etapas; o do projeto é a
- * média de todas. Calcular de outra forma em algum ecrã criaria duas verdades
- * para o mesmo número — foi exactamente o que a secção 14 pede para evitar.
- *
- * Etapas concluídas contam sempre 100, mesmo que `completion` tenha ficado
- * abaixo (etapa marcada como concluída mas por fechar a percentagem).
+ * Reexportada daqui porque o painel, o quadro e o relatório consomem a MESMA
+ * função. Na Fase 3 a implementação saiu deste ficheiro: existia uma cópia em
+ * `schedule-service` (`stageCompletionValue`), e cada cópia é uma verdade nova
+ * para o mesmo número.
  */
-export function stageCompletion(stage: { completion: number; status: string }): number {
-  if (stage.status === "COMPLETED") return 100;
-  return Math.max(0, Math.min(100, stage.completion));
-}
-
-function average(values: number[]): number {
-  if (values.length === 0) return 0;
-  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
-}
-
-/** Progresso por disciplina de um conjunto de etapas. */
-export function progressByDiscipline(stages: { discipline: string | null; completion: number; status: string }[]) {
-  const byDiscipline = new Map<string, number[]>();
-  for (const stage of stages) {
-    const key = stage.discipline?.trim() || "Geral";
-    const list = byDiscipline.get(key) ?? [];
-    list.push(stageCompletion(stage));
-    byDiscipline.set(key, list);
-  }
-  return [...byDiscipline.entries()]
-    .map(([discipline, values]) => ({ discipline, progress: average(values) }))
-    .sort((a, b) => a.discipline.localeCompare(b.discipline, "pt-BR"));
-}
+export { averageCompletion, completionOf, stageCompletion, progressByDiscipline };
 
 export type DashboardMetrics = {
   clients: number;
@@ -140,10 +117,16 @@ export async function projectSnapshots(limit = 6): Promise<ProjectSnapshot[]> {
       name: project.name,
       status: project.status,
       clientName: project.client?.name ?? "Sem cliente",
-      progress: average(stages.map(stageCompletion)),
+      progress: completionOf(stages),
       currentStage: current?.name ?? null,
       nextDueDate: nextDue?.dueDate ?? null,
-      delayedStages: stages.filter((stage) => stage.status !== "COMPLETED" && stage.dueDate && stage.dueDate < now).length,
+      // Mesma regra de alertas do quadro e do relatório — não uma contagem
+      // recalculada aqui, que voltaria a criar uma segunda verdade.
+      delayedStages: summarizeAlerts(
+        stages.map((stage) =>
+          stageAlert({ status: stage.status, dueDate: stage.dueDate }, now),
+        ),
+      ).overdue,
       disciplines: progressByDiscipline(stages),
     };
   });

@@ -36,12 +36,30 @@ chamar `requirePageRole` / `requirePageProjectAccess` — nunca confiar na naveg
 
 `ScheduleStage.completion` (0–100) é a **única** fonte. Disciplina = média das
 etapas; projecto = média das disciplinas. Implementado em
-`dashboard-service.stageCompletion` e coberto por testes — não calcule outro
-percentagem noutro ecrã, ou criam-se duas verdades para o mesmo número.
+**`src/lib/progress.ts`** (`stageCompletion`, `averageCompletion`,
+`completionOf`, `progressByDiscipline`, `phasesByDiscipline`) e coberto por
+testes — não calcule outro percentagem noutro ecrã, ou criam-se duas verdades
+para o mesmo número. `dashboard-service` reexporta; `schedule-service` consome.
+Copiar a fórmula para um serviço novo é regressão, não implementação.
 
 O `status` é **derivado** do `completion` (`scheduleStatusFromPercentage`):
 0 → `NOT_STARTED`, 100 → `COMPLETED`, resto → `IN_PROGRESS`. `ATRASADO` no
 quadro é derivado (prazo vencido e não concluída), não um estado novo.
+`REVIEW` não existe no enum e não foi inventado.
+
+Para mudar de estado, chamar `updateScheduleStageStatus` — grava `completion`,
+valida a transição e recusa entrada em andamento com dependência pendente.
+Escrever `status` à mão produz uma etapa a 100% que o sistema conta como em
+andamento.
+
+## Regra única de alertas
+
+`src/lib/schedule-alerts.ts` → `stageAlert(etapa, agora)`. É a única resposta a
+"como está esta etapa?". Cobre concluída, sem prazo, bloqueada (dependência
+pendente), atrasada, prazo próximo e em dia; `summarizeAlerts` conta;
+`attentionList` ordena por gravidade. `DUE_SOON_DAYS = 7` vem da legenda do
+relatório. Não reimplementar a contagem de atrasadas em painel, quadro ou PDF —
+consumir esta função.
 
 ## Fluxo comercial
 
@@ -101,3 +119,12 @@ Não replicar o conteúdo destes ficheiros — consultar:
 - `README.md` — comandos e visão geral
 - `prisma/schema.prisma` — entidades e relações
 - `src/lib/security-headers.ts` — CSP, HSTS e rota pública por token
+- `docs/FASE-3-AUDITORIA.md` — auditoria do cronograma, decisões e bloqueios
+
+## Relatório e PDF
+
+`src/lib/schedule-report.ts` monta o documento; `src/lib/pdf/pdf-writer.ts` é o
+escritor de PDF do servidor (sem dependências). A tela e o PDF consomem o mesmo
+`ScheduleReport` — nunca calcular um número para o PDF que não seja o da tela.
+Os modelos oficiais (proposta, contrato) **não estão no repositório**; não
+gerar cláusula jurídica. Ver `docs/FASE-3-AUDITORIA.md`.

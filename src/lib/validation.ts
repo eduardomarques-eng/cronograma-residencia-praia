@@ -29,12 +29,23 @@ export const projectSchema = z.object({
 });
 export const projectUpdateSchema = projectSchema.omit({ clientId: true }).partial();
 
+/**
+ * Etapa do cronograma.
+ *
+ * `discipline`, `designer` e `dueDate` existem em `ScheduleStage` mas não
+ * estavam no schema: o serviço validava o resto e deixava estes três de fora,
+ * o que tornava impossível atribuir responsável ou corrigir prazo pela aplicação.
+ * O schema passa a descrever a entidade real.
+ */
 export const scheduleStageSchema = z.object({
   projectId: z.string().uuid(),
   name: z.string().trim().min(1),
   description: optionalText,
+  discipline: optionalText,
+  designer: optionalText,
   startDate: optionalDate,
   endDate: optionalDate,
+  dueDate: optionalDate,
   durationDays: z.number().int().nonnegative().optional().nullable(),
   order: z.number().int().nonnegative(),
   completion: z.number().int().min(0).max(100).default(0),
@@ -42,6 +53,12 @@ export const scheduleStageSchema = z.object({
   notes: optionalText,
 });
 export const scheduleStageUpdateSchema = scheduleStageSchema.omit({ projectId: true }).partial();
+
+/** Transição de estado pedida pela interface. Validada no serviço. */
+export const scheduleStageTransitionSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["NOT_STARTED", "IN_PROGRESS", "COMPLETED"]),
+});
 
 export const paymentSchema = z.object({
   projectId: z.string().uuid(),
