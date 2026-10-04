@@ -1,10 +1,69 @@
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionHeading } from "@/components/section-heading";
+import { Progress } from "@/components/ui/progress";
+import { requirePageRole } from "@/server/auth";
+import { listProjects } from "@/server/services/project-service";
 
 export const metadata = { title: "Projetos" };
+export const dynamic = "force-dynamic";
 
-export default function ProjectsPage() {
-  return <AppShell eyebrow="Portfólio"><SectionHeading title="Projetos" description="Acesse cronograma, pagamentos, briefing e relatório de cada projeto." action={<Button>Novo projeto</Button>} /><div className="mb-5 flex flex-col gap-3 sm:flex-row"><input aria-label="Buscar projetos" placeholder="Buscar por projeto, cliente ou tipo" className="min-h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none placeholder:text-slate-400 focus:border-blue-500" /><select aria-label="Filtrar projetos por status" className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-600"><option>Todos os status</option><option>Em andamento</option><option>Concluídos</option></select></div><EmptyState title="Nenhum projeto cadastrado" description="A listagem será alimentada pelo Project Service após a conexão com PostgreSQL." /></AppShell>;
+const STATUS_TONE: Record<string, "blue" | "green" | "amber" | "neutral"> = {
+  PLANNING: "amber",
+  IN_PROGRESS: "blue",
+  COMPLETED: "green",
+};
+
+/**
+ * Lista real de projetos, lida do banco.
+ *
+ * O progresso NÃO é recalculado aqui: `getProjectSchedule` é quem sabe das
+ * etapas. Enquanto o serviço de leitura não expõe isso, mostramos o estado do
+ * projeto sem inventar percentagem — um "0%" fixo seria pior do que nada.
+ */
+export default async function ProjectsPage() {
+  await requirePageRole("ADMIN");
+  const projects = await listProjects();
+
+  return (
+    <AppShell eyebrow="Portfólio">
+      <SectionHeading title="Projetos" description="Cada projeto com o seu cliente, estado e acesso direto." />
+
+      {projects.length === 0 ? (
+        <EmptyState title="Nenhum projeto" description="Assim que criar um projeto, ele aparece aqui." />
+      ) : (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {projects.map((project) => (
+            <Card key={project.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Link href={`/admin/projetos/${project.id}`} className="font-semibold text-slate-900 hover:text-blue-700">
+                    {project.name}
+                  </Link>
+                  <p className="mt-1 text-sm text-slate-500">{"type" in project && project.type ? project.type : "Sem tipo definido"}</p>
+                </div>
+                <Badge tone={STATUS_TONE[project.status] ?? "neutral"}>{project.status}</Badge>
+              </div>
+
+              <div className="mt-4 flex gap-4 text-xs text-slate-500">
+                <Link href={`/admin/projetos/${project.id}/cronograma`} className="font-semibold text-blue-600 hover:text-blue-700">
+                  Cronograma →
+                </Link>
+                <Link href={`/admin/projetos/${project.id}/relatorio`} className="font-semibold text-blue-600 hover:text-blue-700">
+                  Relatório →
+                </Link>
+              </div>
+
+              <Link href={`/admin/projetos/${project.id}`} className="mt-3 inline-block text-sm font-semibold text-slate-700 hover:text-blue-700">
+                Abrir projeto →
+              </Link>
+            </Card>
+          ))}
+        </div>
+      )}
+    </AppShell>
+  );
 }
