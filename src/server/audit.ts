@@ -25,7 +25,17 @@ export type AuditActorContext = {
 };
 
 export type AuditInput = {
-  action: AuditAction | string;
+  /**
+   * A acção é `AuditAction`, e a comparação com `string` é o que garante que só
+   * existe no catálogo.
+   *
+   * Isto já foi `AuditAction | string`, e a folga foi usada: `PROPOSAL_PRESENTATION_SAVED`
+   * estava a ser gravado sem existir no catálogo — ou seja, uma acção que ninguém
+   * decidiu auditar e sem rótulo para a interface mostrar. O `| string` foi
+   * removido de propósito; reintroduzi-lo para poupar um erro de compilação seria
+   * devolver o problema.
+   */
+  action: AuditAction;
   entity: AuditEntity | string;
   entityId?: string | null;
   /** Versão da entidade afetada — responde "qual versão" do Tópico 36. */
@@ -53,8 +63,13 @@ function actorFromUser(user: { id: string; role: string; name?: string | null } 
  * Nunca lança: uma falha na auditoria não pode derrubar a operação de negócio
  * que a originou (aprovar uma proposta não pode falhar porque o log falhou).
  * A exceção é registada no log do servidor para haver rasto do rasto.
+ * **Não é exportada**, e é de propósito: a porta única é `recordAudit`. Enquanto
+ * esta função esteve exportada, os serviços chamavam-na directamente e o tipo
+ * `AuditAction` deixava de ser uma garantia — passava-se uma acção fora do
+ * catálogo sem o compilador dizer nada. Exportar a implementação e a interface
+ * como a mesma coisa é o que mantém o catálogo a valer.
  */
-export async function writeAuditEntry(input: AuditInput) {
+async function writeAuditEntry(input: AuditInput) {
   try {
     return await prisma.auditLog.create({
       data: {
@@ -97,7 +112,7 @@ export function adminActor(user: { id: string; role: string; name?: string | nul
 
 /** Compatibilidade com as chamadas legadas `recordAudit(action, entity, id, userId, metadata)`. */
 export async function recordLegacyAudit(
-  action: string,
+  action: AuditAction,
   entity: string,
   entityId?: string,
   userId?: string,
@@ -121,14 +136,14 @@ export async function recordLegacyAudit(
  */
 export function recordAudit(input: AuditInput): Promise<unknown>;
 export function recordAudit(
-  action: string,
+  action: AuditAction,
   entity: string,
   entityId?: string,
   userId?: string,
   metadata?: object,
 ): Promise<unknown>;
 export function recordAudit(
-  inputOrAction: AuditInput | string,
+  inputOrAction: AuditInput | AuditAction,
   entity?: string,
   entityId?: string,
   userId?: string,

@@ -5,7 +5,7 @@ import { resolveProposalAccess } from "@/server/services/proposal-service";
 import { generateProposalDocument, type GeneratorInput, type GeneratedDocument } from "@/lib/document-generator";
 import { resolvePaymentPlanForVersion } from "@/lib/payment-plan";
 import { resolvePortfolioSelection, type PortfolioImage } from "@/lib/portfolio";
-import { canDecideProposal } from "@/lib/proposal-access";
+import { canDecideProposalNow, isProposalExpired } from "@/lib/proposal-access";
 import { buildPublicProposalDTO, type PublicProposalDTO } from "@/lib/public-proposal-dto";
 import { type ScheduleTask } from "@/lib/smart-schedule";
 
@@ -204,6 +204,8 @@ export type PublicProposalDocument = PublicProposalDTO & {
   /** Estado do ciclo, usado apenas para bloquear o botão de decisão. */
   status: string;
   decisionEnabled: boolean;
+  /** `true` quando o bloqueio é por VALIDADE (item 34). */
+  expired: boolean;
 };
 
 /**
@@ -281,10 +283,19 @@ export async function loadPublicProposalDocument(input: {
     },
   });
 
+  // O cliente vê o estado EFECTIVO, não o que o status sugere. Uma proposta
+  // expirada mostra-se como expirada, mesmo que o status ainda seja SENT — e o
+  // botão de decisão fica inactivo.
+  const expired = isProposalExpired({ expiresAt: proposal.expiresAt, now: new Date() });
   return {
     ...dto,
-    status: proposal.status,
-    decisionEnabled: canDecideProposal(proposal.status),
+    status: expired ? "EXPIRED" : proposal.status,
+    // Item 34: só é possível decidir se o estado permitir E a proposta estiver
+    // dentro da validade. Antes bastava o estado, e uma proposta expirada
+    // continuava a oferecer "APROVAR".
+    decisionEnabled: canDecideProposalNow({ status: proposal.status, expiresAt: proposal.expiresAt, now: new Date() }),
+    /** Verdadeiro quando o bloqueio é por VALIDADE, para a página explicar. */
+    expired,
   };
 }
 

@@ -15,7 +15,7 @@ import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@
 import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
 import { updateReportVisibility } from "@/server/services/report-visibility-service";
 import { archiveProjectDocument, uploadProjectDocument } from "@/server/services/document-service";
-import { createProposal, createProposalLink, decideProposal, generateContract, listProposals, saveProposalVersion, sendProposalWhatsApp } from "@/server/services/proposal-service";
+import { createProposal, createProposalLink, decideProposal, generateContract, getProposalReadiness, listProposals, saveProposalPresentation, saveProposalVersion, sendProposalEmail, sendProposalWhatsApp } from "@/server/services/proposal-service";
 import { listContractTemplates, listMessageTemplates, updateContractTemplate, updateMessageTemplate } from "@/server/services/message-template-service";
 import { listNotificationEvents } from "@/server/services/notification-service";
 import {
@@ -219,7 +219,32 @@ export async function createProposalLinkAction(proposalId: string) {
 export async function saveProposalVersionAction(proposalId: string, input: Parameters<typeof saveProposalVersion>[1]) {
   const result = await saveProposalVersion(proposalId, input);
   revalidatePath("/admin/propostas");
+  revalidatePath(`/admin/propostas/${proposalId}`);
   return result;
+}
+
+/**
+ * FASE 4C — gravar a apresentação (item 9).
+ *
+ * É a ÚNICA porta de entrada do editor visual. Deliberadamente separada de
+ * `saveProposalVersionAction`: essa grava os valores e cria uma versão nova,
+ * esta grava só as páginas. Misturá-las faria cada legenda corrigida virar um
+ * novo orçamento para o cliente.
+ */
+export async function saveProposalPresentationAction(proposalId: string, presentation: unknown) {
+  const result = await saveProposalPresentation(proposalId, presentation);
+  revalidatePath(`/admin/propostas/${proposalId}`);
+  return result;
+}
+
+/**
+ * FASE 4C — a guarda de publicação para o editor (item 64).
+ *
+ * Devolve a MESMA avaliação que o servidor vai fazer no envio. O editor mostra-a
+ * antes de o ADMIN clicar, para que a recusa não chegue como surpresa.
+ */
+export async function getProposalReadinessAction(proposalId: string) {
+  return getProposalReadiness(proposalId);
 }
 
 export async function listProposalsAction() {
@@ -308,6 +333,19 @@ export async function sendProposalWhatsAppAction(proposalId: string) {
   const result = await sendProposalWhatsApp(proposalId);
   revalidatePath(`/admin/propostas/${proposalId}`);
   revalidatePath("/admin/propostas");
+  return result;
+}
+
+/**
+ * FASE 4D — envio por E-MAIL (item 42).
+ *
+ * Chama `sendProposalEmail`, que já usa o Communication Engine e o `MessageTemplate`
+ * existente. Este action não monta mensagem nenhuma: a variable de cada item vive
+ * no template e no serviço, e é lá que a validação acontece.
+ */
+export async function sendProposalEmailAction(proposalId: string) {
+  const result = await sendProposalEmail(proposalId);
+  revalidatePath(`/admin/propostas/${proposalId}`);
   return result;
 }
 

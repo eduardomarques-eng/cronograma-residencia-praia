@@ -26,6 +26,7 @@ export const TEMPLATE_KIND = {
   SERVICE_TEXT: "service.text",
   WHATSAPP_PROPOSAL: "proposal.whatsapp",
   WHATSAPP_FOLLOWUP: "proposal.reminder",
+  EMAIL_PROPOSAL: "email.proposal",
   EMAIL_APPROVED: "email.approved",
   EMAIL_SIGNOFF: "email.signoff",
 } as const;
@@ -33,6 +34,16 @@ export const TEMPLATE_KIND = {
 export type TemplateKind = (typeof TEMPLATE_KIND)[keyof typeof TEMPLATE_KIND];
 
 export type TemplateVariable = { key: string; label: string; required: boolean };
+
+/** Catálogo de variáveis do e-mail da proposta. */
+const EMAIL_PROPOSAL_VARS: TemplateVariable[] = [
+  { key: "CLIENTE", label: "Nome do cliente", required: true },
+  { key: "PROJETO", label: "Nome do projeto", required: true },
+  { key: "PROPOSTA", label: "Título da proposta", required: false },
+  { key: "VALOR", label: "Valor total", required: false },
+  { key: "VALIDADE", label: "Validade", required: false },
+  { key: "LINK", label: "Link público da proposta", required: true },
+];
 
 export type TemplateDefinition = {
   kind: TemplateKind;
@@ -121,6 +132,7 @@ export const TEMPLATE_CATALOG: readonly TemplateDefinition[] = [
   { kind: TEMPLATE_KIND.SERVICE_TEXT, key: "service.text", channel: "SERVICE", name: "Descrição de serviço", variables: [{ key: "SERVICO_NOME", label: "Nome do serviço", required: true }], blockOnMissing: false },
   { kind: TEMPLATE_KIND.WHATSAPP_PROPOSAL, key: "proposal.whatsapp", channel: "WHATSAPP", name: "WhatsApp — envio da proposta", variables: WHATSAPP_PROPOSAL_VARS, blockOnMissing: true },
   { kind: TEMPLATE_KIND.WHATSAPP_FOLLOWUP, key: "proposal.reminder", channel: "WHATSAPP", name: "WhatsApp — acompanhamento", variables: WHATSAPP_FOLLOWUP_VARS, blockOnMissing: false },
+  { kind: TEMPLATE_KIND.EMAIL_PROPOSAL, key: "email.proposal", channel: "EMAIL", name: "E-mail — envio da proposta", variables: EMAIL_PROPOSAL_VARS, blockOnMissing: true },
   { kind: TEMPLATE_KIND.EMAIL_APPROVED, key: "email.approved", channel: "EMAIL", name: "E-mail — aprovação recebida", variables: CLIENT_VARS, blockOnMissing: false },
   { kind: TEMPLATE_KIND.EMAIL_SIGNOFF, key: "email.signoff", channel: "EMAIL", name: "E-mail — encerramento", variables: [], blockOnMissing: false },
 ];

@@ -15,6 +15,10 @@
   --text-muted: #8993a4;
   --border-subtle: #e4e8ef;
   --border-strong: #cbd5e1;
+  /* Véu sobre imagem de fundo. Fixo por ser um véu de ARDÓSIA da marca, e não
+     uma cor de tema: um tema claro continua a precisar de um fundo escuro para
+     o texto por cima de imagem ser legível. */
+  --overlay: #0f172a;
   --accent: #2563eb;
   --accent-soft: #eff6ff;
   --success: #087443;

@@ -150,6 +150,19 @@ export async function resolveTemplate(
   return { ok: true, key, text: rendered.text, version: record.version, used: rendered.used };
 }
 
+/**
+ * Existe e está activo?
+ *
+ * A guarda de publicação (item 64) precisa deste facto sem carregar o corpo do
+ * template. Existe como função própria para não haver duas maneiras de
+ * "verificar se o template está pronto" — uma delas acabaria por aceitar um
+ * template inactivo, que é exactamente o que o item 64 proíbe.
+ */
+export async function messageTemplateExists(key: string): Promise<boolean> {
+  const record = await prisma.messageTemplate.findUnique({ where: { key }, select: { active: true } });
+  return Boolean(record?.active);
+}
+
 export async function updateMessageTemplate(key: string, input: { name?: string; body: string; active?: boolean }) {
   const user = await requireRole("ADMIN");
   const body = input.body.trim();

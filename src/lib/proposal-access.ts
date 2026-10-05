@@ -82,14 +82,38 @@ export function enforceProposalRateLimit(
 }
 
 /**
- * Tópico 34 — a aprovação aponta para a versão exata presented ao cliente.
+ * Tópico 34 — a aprovação aponta para a versão exata apresentada ao cliente.
  * Uma proposta aprovada não pode voltar a ser alterada sem nova versão.
+ *
+ * FASE 4C: `EXPIRED` NÃO entra na lista de congelados. Expiração é uma condição
+ * do TEMPO, não uma decisão do ADMIN: o que decide é `expiresAt`, e essa data é
+ * reavaliável. Uma proposta expirada pode ser reemitida com nova validade, e
+ * tratá-la como congelada impediria o ADMIN de corrigir o que é apenas um prazo
+ * vencido. O bloqueio de edição continua em `canEditProposal`, e a
+ * impossibilidade de DECIDIR sobre uma proposta expirada está em
+ * `canDecideProposalNow`.
  */
 export function canEditProposal(status: string): boolean {
   return status !== "APPROVED" && status !== "CONVERTED" && status !== "CANCELLED";
 }
 
-/** Um link só pode ser emitido para uma proposta em ciclo comercial ativo. */
+/**
+ * Um link só pode ser emitido para uma proposta em ciclo comercial ativo.
+ *
+ * `EXPIRED` continua aqui. Há uma distinção que vale a pena manter explícita,
+ * porque misturá-la é um erro fácil:
+ *
+ *  · **`EXPIRED` (o estado)** é uma DECISÃO do ADMIN. Quando alguém marca a
+ *    proposta como expirada, está a dizer "esta não volta". Emitir link
+ *    apesar disso ignoraria essa decisão.
+ *  · **`expiresAt` (a data)** é uma condição do TEMPO e é tratada separada, em
+ *    `isProposalExpired`. Uma proposta cuja data passou pode ser reemitida com
+ *    nova validade — é uma operação normal e não reabre nada que tenha sido
+ *    encerrado por decisão.
+ *
+ * A data é verificada pelo servidor no momento de emitir e de decidir; o estado,
+ * por esta função.
+ */
 export function canIssueProposalLink(status: string): boolean {
   return !["CANCELLED", "EXPIRED", "APPROVED", "CONVERTED"].includes(status);
 }
@@ -97,7 +121,48 @@ export function canIssueProposalLink(status: string): boolean {
 /**
  * Uma decisão do cliente só faz sentido sobre uma proposta efetivamente
  * enviada. Aprovar um rascunho nunca foi uma operação válida.
+ *
+ * FASE 4C: `NEGOTIATING` entrou na lista. O cliente pediu alteração, o link
+ * continua válido e ele ainda pode aprovar ou recusar — é o que distingue
+ * negociação de encerramento.
  */
 export function canDecideProposal(status: string): boolean {
-  return ["SENT", "VIEWED", "GENERATED", "READY"].includes(status);
+  return ["SENT", "VIEWED", "GENERATED", "READY", "NEGOTIATING"].includes(status);
+}
+
+/**
+ * FASE 4C, item 34 — a validade é IMPEDITIVA, não informativa.
+ *
+ * Uma proposta expirada NÃO pode ser aprovada. Publicá-la continua a ser
+ * possível (reemitir com nova validade é uma operação normal), mas decidir sobre
+ * ela significaria o cliente aceitar um documento que já não vale.
+ *
+ * A função é pura e recebe `now` para que o teste simule o dia da expiração sem
+ * esperar por ele.
+ */
+export function isProposalExpired(input: { expiresAt: Date | null; now: Date }): boolean {
+  if (!input.expiresAt) return false;
+  return input.expiresAt.getTime() <= input.now.getTime();
+}
+
+/** Decisão do cliente permitida: estado válido E dentro da validade. */
+export function canDecideProposalNow(input: { status: string; expiresAt: Date | null; now: Date }): boolean {
+  return canDecideProposal(input.status) && !isProposalExpired(input);
+}
+
+/**
+ * FASE 4C, item 49 — a negociação NUNCA edita a versão enviada.
+ *
+ * Se a proposta já foi enviada e o cliente pediu alteração, a resposta é uma NOVA
+ * versão. Estas funções dizem ao serviço o que fazer quando isso acontece: o
+ * estado passa a `NEGOTIATING` e os links anteriores são revogados, porque o
+ * link antigo apontaria para um documento que o cliente já não vai aprovar.
+ */
+export function nextStatusAfterNewVersion(current: string): "DRAFT" | "NEGOTIATING" {
+  return ["SENT", "VIEWED", "GENERATED", "READY", "NEGOTIATING"].includes(current) ? "NEGOTIATING" : "DRAFT";
+}
+
+/** Uma proposta já publicada precisa de link novo para a nova versão chegar. */
+export function needsRepublishAfterNewVersion(current: string): boolean {
+  return ["SENT", "VIEWED", "GENERATED", "READY", "NEGOTIATING"].includes(current);
 }

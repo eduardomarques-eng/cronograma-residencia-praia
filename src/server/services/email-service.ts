@@ -124,7 +124,11 @@ export function passwordResetEmail(input: { to: string; name: string; url: strin
 /**
  * O link vai por e-mail e o assunto/body podem ser reflectidos na interface,
  * por isso nunca inserimos HTML sem escapar.
+ *
+ * Exportada para os novos consumidores (o e-mail da proposta): duplicar esta
+ * função criaria duas listas de caracteres a escapar, e a que ficasse por
+ * actualizar seria uma fuga de HTML.
  */
-function escapeHtml(value: string) {
+export function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!);
 }

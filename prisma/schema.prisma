@@ -72,6 +72,10 @@ enum DocumentSource {
 enum ProposalStatus {
   DRAFT
   IN_REVIEW
+  // Prompt 4C, item 49 — negociação: o cliente pediu alteração sobre uma versão já
+  // enviada. O ciclo continua ABERTO (o que o diferencia de APPROVED/REJECTED) e
+  // a resposta é sempre uma NOVA versão, nunca a edição da que foi enviada.
+  NEGOTIATING
   READY
   GENERATED
   SENT
@@ -500,6 +504,26 @@ model Proposal {
   approvalIp     String?
   approvalMeta   Json?
   approvedVersion Int?
+  // Prompt 4C, item 3 — identificação comercial legível (ex.: "PROP-2026-0007").
+  //
+  // Gerado pelo servidor na criação. É estável e sequencial-por-ano apenas para o
+  // ADMIN: o link público NUNCA o expõe, porque o identificador não é autorização.
+  code           String?         @unique
+  // Prompt 4C, item 45 — versão que o link público exibe.
+  //
+  // Sem esta coluna, o carregador público lia sempre a versão MAIS RECENTE. Isso
+  // quebrava a garantia central da fase: o cliente aprovava o V1 e, se o ADMIN
+  // editasse depois, o mesmo link passava a mostrar o V2 — o cliente aprovava
+  // outra coisa sem ter lido. Fixar a versão no link torna o link uma FOTOGRAFIA
+  // do que foi enviado.
+  publishedVersion Int?
+  publishedAt      DateTime?
+  // Prompt 4C, item 24 — snapshot do preço efectivamente usado por esta versão.
+  //
+  // Congelado na gravação da versão. Sem ele, alterar o catálogo mudaria o número
+  // de uma proposta já enviada, e o contrato bornaria de um valor que o cliente
+  // nunca viu.
+  pricingSnapshot  Json?
   // Tópico 37: marca de conversão. Numa única conversão por proposta, estes
   // campos são gravados na mesma transação das parcelas, do serviço e dos
   // documentos. Se a transação falhar, nada fica gravado e a próxima execução
@@ -562,10 +586,17 @@ model ProposalAccessLink {
   expiresAt   DateTime?
   firstAccessAt DateTime?
   lastAccessAt DateTime?
+  // Prompt 4C, item 42 — o link aponta para UMA versão específica.
+  //
+  // NULL significa "proposta ainda não publicada" (legado/rascunho). O leitor
+  // público recusa nesse caso em vez de escolher a versão mais recente por conta
+  // própria: escolher seria publicar algo que ninguém revisou.
+  versionNumber Int?
   proposal    Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdAt   DateTime  @default(now())
 
   @@index([proposalId, revokedAt])
+  @@index([versionNumber])
 }
 
 enum ContractStatus {
