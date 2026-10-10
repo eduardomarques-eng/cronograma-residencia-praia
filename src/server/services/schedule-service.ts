@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { notFound, DomainError } from "@/server/errors";
-import { requireRole } from "@/server/auth";
+import { requireScheduleRole } from "@/server/auth";
 import { scheduleStageSchema, scheduleStageUpdateSchema } from "@/lib/validation";
 import {
   canTransition,
@@ -220,7 +220,9 @@ export async function updateScheduleStageStatus(id: string, status: string) {
   // Autorização AQUI, não só na server action: o serviço é o ponto de escrita
   // e pode ser chamado de qualquer sítio. Sem esta guarda, uma chamada directa
   // ao serviço mudaria o estado de uma etapa sem qualquer verificação de sessão.
-  await requireRole("ADMIN");
+  // `requireScheduleRole` aceita ADMIN (dono) e OPERADOR (funcionário da equipa
+  // com acesso restrito); o OPERADOR só chega às etapas dos projetos atribuídos.
+  await requireScheduleRole();
 
   if (!isScheduleStatus(status)) throw new DomainError("Status de etapa inválido.", "VALIDATION");
 

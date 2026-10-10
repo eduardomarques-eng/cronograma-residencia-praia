@@ -172,6 +172,31 @@ async function main() {
     },
   });
 
+  // Funcionário da equipa (OPERADOR) — acesso restrito à operação do cronograma.
+  // OPCIONAL, como o CLIENT: sem SEED_OPERADOR_PASSWORD o seed não o cria, para
+  // não bloquear instalações que só querem o ADMIN. Não tem clientId: é equipa
+  // interna e o acesso a cada projeto é dado por ProjectAccess (atribuição
+  // explícita do ADMIN), nunca por cliente. A senha segue a mesma política do
+  // hashPassword (>=12) e vem do ambiente — nunca do código.
+  const operadorPassword = process.env.SEED_OPERADOR_PASSWORD;
+  if (!operadorPassword) {
+    console.info("[seed] SEED_OPERADOR_PASSWORD por definir — utilizador operador não criado.");
+  } else {
+    const operadorEmail = (process.env.SEED_OPERADOR_EMAIL ?? "operador@example.com").trim().toLowerCase();
+    const operadorName = process.env.SEED_OPERADOR_NAME?.trim() || "Operador";
+    await prisma.user.upsert({
+      where: { email: operadorEmail },
+      update: { name: operadorName, passwordHash: hashPassword(operadorPassword), role: "OPERADOR" },
+      create: {
+        name: operadorName,
+        email: operadorEmail,
+        passwordHash: hashPassword(operadorPassword),
+        role: "OPERADOR",
+      },
+    });
+    console.info(`[seed] Operador provisionado: ${operadorEmail} (acesso por ProjectAccess).`);
+  }
+
   // O utilizador CLIENT é opcional: existem instalações em que só se quer o
   // ADMIN. Exigir a senha do cliente bloqueava a criação da conta principal.
   const clientPassword = process.env.SEED_CLIENT_PASSWORD;

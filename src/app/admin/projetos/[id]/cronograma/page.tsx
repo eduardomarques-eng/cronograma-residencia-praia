@@ -42,13 +42,16 @@ function formatDate(value: Date | null) {
 
 export default async function CronogramaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requirePageProjectAccess(id);
+  const user = await requirePageProjectAccess(id);
   const board = await kanbanBoard(id);
 
   return (
-    <AppShell eyebrow="Cronograma">
-      <Link href={`/projetos/${id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
-        ← Voltar ao projeto
+    <AppShell eyebrow="Cronograma" role={user.role}>
+      <Link
+        href={user.role === "ADMIN" ? `/projetos/${id}` : "/operacao"}
+        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+      >
+        {user.role === "ADMIN" ? "← Voltar ao projeto" : "← Voltar à operação"}
       </Link>
 
       <SectionHeading
@@ -71,9 +74,11 @@ export default async function CronogramaPage({ params }: { params: Promise<{ id:
       />
 
       <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-500">
-        <Link href={`/admin/projetos/${id}/relatorio`} className="font-semibold text-blue-600 hover:text-blue-700">
-          Relatório do cronograma →
-        </Link>
+        {user.role === "ADMIN" ? (
+          <Link href={`/admin/projetos/${id}/relatorio`} className="font-semibold text-blue-600 hover:text-blue-700">
+            Relatório do cronograma →
+          </Link>
+        ) : null}
       </div>
 
       {board.totals.stages === 0 ? (

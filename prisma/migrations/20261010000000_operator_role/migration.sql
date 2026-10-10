@@ -1,0 +1,11 @@
+-- Acesso restrito do funcionário da equipa (OPERADOR).
+--
+-- O OPERADOR opera o cronograma: vê os projetos atribuídos via ProjectAccess e
+-- move etapas, sem acesso ao painel comercial, clientes, propostas, contratos
+-- ou configurações. A fronteira de acesso é provada no servidor (src/server/auth.ts).
+--
+-- ALTER TYPE ... ADD VALUE é aditivo e não reescreve a tabela User. Não pode
+-- correr dentro de bloco transacional que depende do novo valor na mesma
+-- transação — por isso a migration só declara o valor; a criação de contas
+-- OPERADOR acontece depois (seed/script) numa transação separada.
+ALTER TYPE "UserRole" ADD VALUE IF NOT EXISTS 'OPERADOR' AFTER 'ADMIN';

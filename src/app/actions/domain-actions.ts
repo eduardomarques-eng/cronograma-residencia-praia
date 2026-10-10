@@ -9,7 +9,7 @@ import { createProjectPayment, updateProjectPayment } from "@/server/services/pa
 import { saveBriefingResponses } from "@/server/services/briefing-service";
 import { finishBriefing, reopenBriefing } from "@/server/services/briefing-service";
 import { removeVisualOption, saveVisualOption } from "@/server/services/briefing-service";
-import { requireProjectAccess, requireRole } from "@/server/auth";
+import { requireProjectAccess, requireRole, requireScheduleRole } from "@/server/auth";
 import { DomainError } from "@/server/errors";
 import { createBriefingLink, revokeBriefingLink, getBriefingLinkStatus } from "@/server/services/briefing-link-service";
 import { finishBriefingByToken, saveBriefingResponsesByToken } from "@/server/services/briefing-service";
@@ -28,6 +28,7 @@ import { advanceSignatureStatus, requestContractSignature } from "@/server/servi
 import { convertApprovedProposal, getConversionReadiness } from "@/server/services/conversion-service";
 import { listAuditTrail } from "@/server/audit";
 import { resolveClientKey } from "@/lib/proposal-access";
+import { setOperatorProjectAccess } from "@/server/services/operation-service";
 import type { SignatureStatusName } from "@/lib/signature";
 
 export async function saveClientAction(input: unknown) {
@@ -65,7 +66,7 @@ export async function editProjectAction(id: string, input: unknown) {
 }
 
 export async function saveScheduleStageAction(input: unknown) {
-  await requireRole("ADMIN");
+  await requireScheduleRole();
   const result = await createScheduleStage(input);
   revalidatePath("/admin/projetos");
   revalidatePath("/admin");
@@ -81,7 +82,7 @@ export async function saveScheduleStageAction(input: unknown) {
  */
 export async function moveStageStatusAction(stageId: string, status: string) {
   try {
-    await requireRole("ADMIN");
+    await requireScheduleRole();
     await updateScheduleStageStatus(stageId, status);
     revalidatePath("/admin/projetos");
     revalidatePath("/admin");
@@ -98,7 +99,7 @@ export async function moveStageStatusAction(stageId: string, status: string) {
 }
 
 export async function editScheduleStageAction(id: string, input: unknown) {
-  await requireRole("ADMIN");
+  await requireScheduleRole();
   const result = await updateScheduleStage(id, input);
   revalidatePath("/admin/projetos");
   revalidatePath("/admin");
@@ -377,5 +378,17 @@ export async function getConversionReadinessAction(proposalId: string) {
 export async function listAuditTrailAction(entity: string, entityId: string) {
   await requireRole("ADMIN");
   return listAuditTrail(entity, entityId);
+}
+
+/**
+ * Atribui (ou remove) os projetos que um OPERADOR pode operar. A autorização de
+ * ADMIN é provada no serviço (`setOperatorProjectAccess`), não aqui. A lista de
+ * `projectIds` é a fonte da verdade: o que não estiver nela perde o acesso.
+ */
+export async function setOperatorProjectAccessAction(userId: string, projectIds: string[]) {
+  const result = await setOperatorProjectAccess(userId, projectIds);
+  revalidatePath("/admin/equipe");
+  revalidatePath("/operacao");
+  return result;
 }
 

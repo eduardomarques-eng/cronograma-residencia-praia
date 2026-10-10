@@ -34,6 +34,11 @@ enum PaymentStatus {
 
 enum UserRole {
   ADMIN
+  // OPERADOR: funcionário da equipa com acesso restrito. Opera o cronograma
+  // (vê projetos atribuídos e move etapas) sem acesso ao painel comercial,
+  // clientes, propostas, contratos ou configurações. A fronteira é provada no
+  // servidor (auth.ts), nunca na navegação.
+  OPERADOR
   CLIENT
 }
 
