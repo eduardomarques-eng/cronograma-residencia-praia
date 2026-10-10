@@ -41,7 +41,7 @@ export default async function HomePage() {
         {!database.ok ? (
           <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs leading-5 text-amber-900">
             <strong className="block text-sm">A aplicação está a correr, mas ainda não há dados</strong>
-            <span className="mt-1 block">Isto não é um erro: falta aplicar as 14 migrations e o seed.</span>
+            <span className="mt-1 block">Isto não é um erro: falta aplicar as 17 migrations e o seed.</span>
             <pre className="mt-3 overflow-x-auto rounded-lg bg-white/70 p-2 text-[11px]">{`npx prisma migrate deploy\nnpm run db:seed`}</pre>
             <span className="mt-2 block">{database.reason}</span>
           </div>

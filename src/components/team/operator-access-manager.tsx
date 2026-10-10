@@ -29,9 +29,11 @@ export function OperatorAccessManager({
   const [selected, setSelected] = useState<string[]>(assignedProjectIds);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggle(projectId: string) {
     setSaved(false);
+    setError(null);
     setSelected((current) =>
       current.includes(projectId) ? current.filter((id) => id !== projectId) : [...current, projectId],
     );
@@ -39,8 +41,18 @@ export function OperatorAccessManager({
 
   function save() {
     startTransition(async () => {
-      await setOperatorProjectAccessAction(operatorId, selected);
-      setSaved(true);
+      // A action lança `DomainError` (sessão expirada, operador removido, etc).
+      // Sem este catch o React registaria a exceção e o ADMIN ficaria sem
+      // resposta — o mesmo padrão de `moveStageStatusAction`, que devolve
+      // { ok: false, message } em vez de deixar a promessa rejeitar.
+      try {
+        setError(null);
+        await setOperatorProjectAccessAction(operatorId, selected);
+        setSaved(true);
+      } catch (cause) {
+        setSaved(false);
+        setError(cause instanceof Error ? cause.message : "Não foi possível guardar o acesso.");
+      }
     });
   }
 
@@ -84,6 +96,7 @@ export function OperatorAccessManager({
           {pending ? "Salvando…" : "Salvar acesso"}
         </Button>
         {saved && !dirty ? <span className="text-sm font-medium text-emerald-700">Acesso atualizado.</span> : null}
+        {error ? <span className="text-sm font-medium text-rose-700">{error}</span> : null}
       </div>
     </Card>
   );

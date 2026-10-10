@@ -174,15 +174,45 @@ export async function listAssignees(projectId: string): Promise<string[]> {
 
 export { scheduleStatusFromPercentage };
 
+/**
+ * Onde a sessão encontra o projecto.
+ *
+ * `requireScheduleRole` prova o PAPEL (ADMIN ou OPERADOR); esta função prova o
+ * PROJECTO: por o papel deixar operar o cronograma não chega — um operador só
+ * escreve nas etapas dos projetos que lhe foram atribuídos (`ProjectAccess`).
+ * Sem esta guarda, um operador com o id de uma etapa de outro projecto movia
+ * etapas que nunca lhe pertenceram: a página filtrava a LEITURA por projecto,
+ * mas a escrita ia pelo id solto (IDOR). Quem não pode escrever recebe a mesma
+ * resposta de "etapa inexistente" — um id alheio não revela nada.
+ */
+async function requireScheduleWrite(
+  user: { id: string; role: string },
+  projectId: string,
+  entity: "Etapa" | "Projeto",
+) {
+  if (user.role === "ADMIN") return;
+  const access = await prisma.projectAccess.findUnique({
+    where: { projectId_userId: { projectId, userId: user.id } },
+    select: { id: true },
+  });
+  if (!access) return notFound(entity);
+}
+
 export async function createScheduleStage(input: unknown) {
+  const user = await requireScheduleRole();
   const data = scheduleStageSchema.parse(input);
   const project = await prisma.project.findUnique({ where: { id: data.projectId }, select: { id: true } });
   if (!project) return notFound("Projeto");
+  await requireScheduleWrite(user, data.projectId, "Projeto");
   return prisma.scheduleStage.create({ data: { ...data, status: scheduleStatusFromPercentage(data.completion) } });
 }
 
 export async function updateScheduleStage(id: string, input: unknown) {
+  const user = await requireScheduleRole();
   const data = scheduleStageUpdateSchema.parse(input);
+  const stage = await prisma.scheduleStage.findUnique({ where: { id }, select: { projectId: true } });
+  if (!stage) return notFound("Etapa");
+  await requireScheduleWrite(user, stage.projectId, "Etapa");
   const update = data.completion === undefined ? data : { ...data, status: scheduleStatusFromPercentage(data.completion) };
   try {
     return await prisma.scheduleStage.update({ where: { id }, data: update });
@@ -220,9 +250,10 @@ export async function updateScheduleStageStatus(id: string, status: string) {
   // Autorização AQUI, não só na server action: o serviço é o ponto de escrita
   // e pode ser chamado de qualquer sítio. Sem esta guarda, uma chamada directa
   // ao serviço mudaria o estado de uma etapa sem qualquer verificação de sessão.
-  // `requireScheduleRole` aceita ADMIN (dono) e OPERADOR (funcionário da equipa
-  // com acesso restrito); o OPERADOR só chega às etapas dos projetos atribuídos.
-  await requireScheduleRole();
+  // `requireScheduleRole` aceita ADMIN (dono) e OPERADOR (funcionário da equipa);
+  // o PROJECTO é provado logo a seguir, por `requireScheduleWrite` — o operador
+  // só escreve nas etapas dos projetos que lhe foram atribuídos.
+  const user = await requireScheduleRole();
 
   if (!isScheduleStatus(status)) throw new DomainError("Status de etapa inválido.", "VALIDATION");
 
@@ -230,12 +261,14 @@ export async function updateScheduleStageStatus(id: string, status: string) {
     where: { id },
     select: {
       id: true,
+      projectId: true,
       status: true,
       completion: true,
       dependency: { select: { name: true, status: true } },
     },
   });
   if (!stage) return notFound("Etapa");
+  await requireScheduleWrite(user, stage.projectId, "Etapa");
 
   if (!canTransition(stage.status, status)) {
     throw new DomainError(
